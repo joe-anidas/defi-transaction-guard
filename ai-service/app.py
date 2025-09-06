@@ -19,6 +19,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from groq import Groq
 import google.generativeai as genai
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()

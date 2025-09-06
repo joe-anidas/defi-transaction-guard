@@ -141,6 +141,7 @@ npm run dev
 ```bash
 cd blockchain
 npm install
+npm run node
 npm run deploy
 ```
 
