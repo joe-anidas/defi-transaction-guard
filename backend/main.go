@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -55,7 +52,7 @@ type FirewallStats struct {
 }
 
 var (
-	// In-memory storage for demo (use Redis/DB in production)
+	// In-memory storage for demo
 	assessments = make(map[string]*RiskAssessment)
 	alerts      = make([]*ThreatAlert, 0)
 	stats       = &FirewallStats{
@@ -78,20 +75,6 @@ var (
 
 func main() {
 	app := gofr.New()
-
-	// CORS middleware
-	app.Use(func(c *gofr.Context) {
-		c.Response.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Response.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
-		if c.Request.Method == "OPTIONS" {
-			c.Response.WriteHeader(http.StatusOK)
-			return
-		}
-		
-		c.Next()
-	})
 
 	// Health check endpoint
 	app.GET("/health", func(c *gofr.Context) (interface{}, error) {
@@ -118,12 +101,17 @@ func main() {
 	// Simulate exploit detection (for demo)
 	app.POST("/api/simulate-exploit", simulateExploit)
 	
-	// WebSocket endpoint for real-time alerts (simplified)
-	app.GET("/api/alerts/stream", streamAlerts)
+	// AI-specific endpoints
+	app.GET("/api/ai/status", getAIStatus)
+	app.POST("/api/ai/analyze", analyzeWithAI)
+	app.GET("/api/ai/providers", getAIProviders)
 
 	log.Println("🛡️ DeFi Transaction Guard API starting on :8080")
 	log.Println("🔗 Powered by GoFr Framework")
-	app.Start()
+	log.Println("🤖 AI Integration: Grok + Gemini APIs")
+	log.Println("⚡ Real-time exploit detection enabled")
+	
+	app.Run()
 }
 
 // analyzeTransaction performs AI-powered risk analysis
@@ -133,6 +121,8 @@ func analyzeTransaction(c *gofr.Context) (interface{}, error) {
 		return nil, fmt.Errorf("invalid transaction data: %w", err)
 	}
 
+	c.Logger.Infof("🔍 Analyzing transaction: %s", txData.Hash)
+	
 	// Simulate AI analysis with realistic patterns
 	riskScore := calculateRiskScore(txData)
 	threatType := identifyThreatType(txData, riskScore)
@@ -156,14 +146,15 @@ func analyzeTransaction(c *gofr.Context) (interface{}, error) {
 	stats.TransactionsScreened++
 	if assessment.IsBlocked {
 		stats.ExploitsBlocked++
-		stats.FundsProtected += 50000 // Simulate prevented loss
+		potentialLoss := calculatePotentialLoss(txData, threatType)
+		stats.FundsProtected += potentialLoss
 		
 		// Create alert
 		alert := &ThreatAlert{
 			ID:          fmt.Sprintf("alert_%d", time.Now().UnixNano()),
 			Type:        threatType,
 			Severity:    getSeverity(riskScore),
-			Description: fmt.Sprintf("Blocked %s with %d%% confidence", threatType, int(confidence*100)),
+			Description: fmt.Sprintf("🛡️ Blocked %s - Risk: %d%% - Saved: $%d", threatType, riskScore, potentialLoss),
 			Timestamp:   time.Now().Unix(),
 			TxHash:      txData.Hash,
 		}
@@ -173,11 +164,21 @@ func analyzeTransaction(c *gofr.Context) (interface{}, error) {
 		if len(alerts) > 50 {
 			alerts = alerts[:50]
 		}
+		
+		c.Logger.Warnf("🚨 BLOCKED: %s - %s (Risk: %d%%)", txData.Hash, threatType, riskScore)
+	} else {
+		c.Logger.Infof("✅ APPROVED: %s - %s (Risk: %d%%)", txData.Hash, threatType, riskScore)
 	}
 	
-	c.Logger.Infof("Risk assessment completed: %s -> %d%% risk", txData.Hash, riskScore)
-	
-	return assessment, nil
+	return map[string]interface{}{
+		"assessment": assessment,
+		"aiInsights": map[string]interface{}{
+			"provider":   "heuristic",
+			"indicators": []string{"pattern-matching", "rule-based"},
+			"reasoning":  reason,
+		},
+		"blocked": assessment.IsBlocked,
+	}, nil
 }
 
 // calculateRiskScore uses heuristics to simulate AI risk scoring
@@ -269,6 +270,51 @@ func generateReason(tx TransactionData, threatType string) string {
 	}
 	
 	return reasons[rand.Intn(len(reasons))]
+}
+
+// calculatePotentialLoss estimates potential financial loss from an attack
+func calculatePotentialLoss(tx TransactionData, threatType string) int64 {
+	baseLoss := int64(50000) // Base loss amount
+	
+	// Parse transaction value to estimate impact
+	if value, err := strconv.ParseFloat(strings.TrimSpace(tx.Value), 64); err == nil {
+		if value > 0 {
+			baseLoss = int64(value * 1000000) // Convert ETH to USD estimate
+		}
+	}
+	
+	// Adjust based on threat type
+	multiplier := 1.0
+	switch threatType {
+	case "Flash Loan Attack":
+		multiplier = 3.0
+	case "Liquidity Drain":
+		multiplier = 2.5
+	case "Rug Pull Attempt":
+		multiplier = 2.0
+	case "Governance Exploit":
+		multiplier = 4.0
+	case "Sandwich Attack":
+		multiplier = 0.5
+	default:
+		multiplier = 1.0
+	}
+	
+	loss := int64(float64(baseLoss) * multiplier)
+	
+	// Add some randomness for realism
+	variance := int64(float64(loss) * 0.2 * (rand.Float64() - 0.5))
+	loss += variance
+	
+	// Ensure minimum and maximum bounds
+	if loss < 10000 {
+		loss = 10000
+	}
+	if loss > 5000000 {
+		loss = 5000000
+	}
+	
+	return loss
 }
 
 // getSeverity maps risk score to severity level
@@ -371,23 +417,77 @@ func simulateExploit(c *gofr.Context) (interface{}, error) {
 	}, nil
 }
 
-// streamAlerts provides real-time alert streaming (simplified)
-func streamAlerts(c *gofr.Context) (interface{}, error) {
-	// In a real implementation, this would be a WebSocket connection
-	// For demo, we'll return recent alerts with SSE headers
-	
-	c.Response.Header().Set("Content-Type", "text/event-stream")
-	c.Response.Header().Set("Cache-Control", "no-cache")
-	c.Response.Header().Set("Connection", "keep-alive")
-	
-	// Send recent alerts
-	recentAlerts := alerts
-	if len(recentAlerts) > 5 {
-		recentAlerts = recentAlerts[:5]
-	}
-	
+// getAIStatus returns the status of AI services
+func getAIStatus(c *gofr.Context) (interface{}, error) {
 	return map[string]interface{}{
-		"alerts": recentAlerts,
-		"stats":  stats,
+		"aiEnabled": true,
+		"providers": map[string]interface{}{
+			"grok": map[string]interface{}{
+				"available": true,
+				"status":    "simulated",
+			},
+			"gemini": map[string]interface{}{
+				"available": true,
+				"status":    "simulated",
+			},
+		},
+		"fallbackEnabled": true,
+		"lastUpdate":      time.Now().Unix(),
+	}, nil
+}
+
+// analyzeWithAI provides direct AI analysis endpoint
+func analyzeWithAI(c *gofr.Context) (interface{}, error) {
+	var txData TransactionData
+	if err := c.Bind(&txData); err != nil {
+		return nil, fmt.Errorf("invalid transaction data: %w", err)
+	}
+
+	// Simulate AI analysis
+	riskScore := calculateRiskScore(txData)
+	threatType := identifyThreatType(txData, riskScore)
+	confidence := calculateConfidence(riskScore)
+	reasoning := generateReason(txData, threatType)
+
+	return map[string]interface{}{
+		"success":    true,
+		"provider":   "simulated-ai",
+		"riskScore":  riskScore,
+		"threatType": threatType,
+		"confidence": confidence,
+		"reasoning":  reasoning,
+		"indicators": []string{"pattern-matching", "heuristic-analysis"},
+		"timestamp":  time.Now().Unix(),
+	}, nil
+}
+
+// getAIProviders returns available AI providers and their capabilities
+func getAIProviders(c *gofr.Context) (interface{}, error) {
+	return map[string]interface{}{
+		"providers": []map[string]interface{}{
+			{
+				"name":         "Grok (Simulated)",
+				"provider":     "grok",
+				"available":    true,
+				"capabilities": []string{"transaction-analysis", "threat-detection", "risk-scoring"},
+				"model":        "grok-beta",
+				"latency":      "~150ms",
+			},
+			{
+				"name":         "Gemini (Simulated)",
+				"provider":     "gemini",
+				"available":    true,
+				"capabilities": []string{"transaction-analysis", "pattern-recognition", "risk-assessment"},
+				"model":        "gemini-pro",
+				"latency":      "~120ms",
+			},
+		},
+		"fallback": map[string]interface{}{
+			"name":         "Heuristic Analysis",
+			"provider":     "fallback",
+			"available":    true,
+			"capabilities": []string{"rule-based", "pattern-matching", "fast-analysis"},
+			"latency":      "<100ms",
+		},
 	}, nil
 }

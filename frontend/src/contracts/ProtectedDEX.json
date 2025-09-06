@@ -1,0 +1,105 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {"internalType": "address", "name": "_transactionGuard", "type": "address"}
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"indexed": true, "internalType": "address", "name": "provider", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "amountA", "type": "uint256"},
+        {"indexed": false, "internalType": "uint256", "name": "amountB", "type": "uint256"}
+      ],
+      "name": "LiquidityAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"indexed": false, "internalType": "address", "name": "tokenA", "type": "address"},
+        {"indexed": false, "internalType": "address", "name": "tokenB", "type": "address"}
+      ],
+      "name": "PoolCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"indexed": true, "internalType": "address", "name": "trader", "type": "address"},
+        {"indexed": false, "internalType": "address", "name": "tokenIn", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "amountIn", "type": "uint256"},
+        {"indexed": false, "internalType": "uint256", "name": "amountOut", "type": "uint256"}
+      ],
+      "name": "Swap",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"internalType": "uint256", "name": "amountA", "type": "uint256"},
+        {"internalType": "uint256", "name": "amountB", "type": "uint256"},
+        {"internalType": "uint256", "name": "minAmountA", "type": "uint256"},
+        {"internalType": "uint256", "name": "minAmountB", "type": "uint256"}
+      ],
+      "name": "addLiquidity",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "tokenA", "type": "address"},
+        {"internalType": "address", "name": "tokenB", "type": "address"}
+      ],
+      "name": "createPool",
+      "outputs": [{"internalType": "bytes32", "name": "poolId", "type": "bytes32"}],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"internalType": "address", "name": "tokenIn", "type": "address"},
+        {"internalType": "uint256", "name": "amountIn", "type": "uint256"}
+      ],
+      "name": "getAmountOut",
+      "outputs": [{"internalType": "uint256", "name": "amountOut", "type": "uint256"}],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "poolId", "type": "bytes32"}
+      ],
+      "name": "getPoolInfo",
+      "outputs": [
+        {"internalType": "address", "name": "tokenA", "type": "address"},
+        {"internalType": "address", "name": "tokenB", "type": "address"},
+        {"internalType": "uint256", "name": "reserveA", "type": "uint256"},
+        {"internalType": "uint256", "name": "reserveB", "type": "uint256"},
+        {"internalType": "uint256", "name": "totalLiquidity", "type": "uint256"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "poolId", "type": "bytes32"},
+        {"internalType": "address", "name": "tokenIn", "type": "address"},
+        {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+        {"internalType": "uint256", "name": "minAmountOut", "type": "uint256"}
+      ],
+      "name": "swap",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

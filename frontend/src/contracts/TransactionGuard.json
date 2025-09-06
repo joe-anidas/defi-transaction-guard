@@ -1,0 +1,192 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {"internalType": "address", "name": "_bdagToken", "type": "address"},
+        {"internalType": "address", "name": "_backendOracle", "type": "address"}
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "address", "name": "oldOracle", "type": "address"},
+        {"indexed": true, "internalType": "address", "name": "newOracle", "type": "address"}
+      ],
+      "name": "BackendOracleUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "address", "name": "target", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "potentialLoss", "type": "uint256"}
+      ],
+      "name": "ExploitPrevented",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "txHash", "type": "bytes32"},
+        {"indexed": false, "internalType": "uint256", "name": "riskScore", "type": "uint256"}
+      ],
+      "name": "TransactionApproved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "bytes32", "name": "txHash", "type": "bytes32"},
+        {"indexed": false, "internalType": "uint256", "name": "riskScore", "type": "uint256"},
+        {"indexed": false, "internalType": "string", "name": "threatType", "type": "string"}
+      ],
+      "name": "TransactionBlocked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "address", "name": "validator", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+      ],
+      "name": "ValidatorStaked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "address", "name": "validator", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"},
+        {"indexed": false, "internalType": "string", "name": "reason", "type": "string"}
+      ],
+      "name": "ValidatorSlashed",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "BLOCK_THRESHOLD",
+      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "bdagToken",
+      "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address[]", "name": "contracts", "type": "address[]"},
+        {"internalType": "uint256[]", "name": "scores", "type": "uint256[]"}
+      ],
+      "name": "batchUpdateRiskScores",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "target", "type": "address"},
+        {"internalType": "bytes", "name": "data", "type": "bytes"}
+      ],
+      "name": "executeProtected",
+      "outputs": [
+        {"internalType": "bool", "name": "success", "type": "bool"},
+        {"internalType": "bytes", "name": "returnData", "type": "bytes"}
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getFirewallStats",
+      "outputs": [
+        {"internalType": "uint256", "name": "transactionsScreened", "type": "uint256"},
+        {"internalType": "uint256", "name": "exploitsBlocked", "type": "uint256"},
+        {"internalType": "uint256", "name": "fundsProtected", "type": "uint256"},
+        {"internalType": "uint256", "name": "activeValidatorCount", "type": "uint256"},
+        {"internalType": "uint256", "name": "totalStakedAmount", "type": "uint256"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "validator", "type": "address"}
+      ],
+      "name": "getValidatorInfo",
+      "outputs": [
+        {"internalType": "uint256", "name": "stakedAmount", "type": "uint256"},
+        {"internalType": "uint256", "name": "correctPredictions", "type": "uint256"},
+        {"internalType": "uint256", "name": "totalPredictions", "type": "uint256"},
+        {"internalType": "bool", "name": "isActive", "type": "bool"},
+        {"internalType": "uint256", "name": "accuracy", "type": "uint256"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "txHash", "type": "bytes32"}
+      ],
+      "name": "isTransactionSafe",
+      "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "", "type": "address"}
+      ],
+      "name": "riskScores",
+      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "target", "type": "address"},
+        {"internalType": "uint256", "name": "potentialLoss", "type": "uint256"},
+        {"internalType": "string", "name": "exploitType", "type": "string"}
+      ],
+      "name": "simulateExploitPrevention",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "amount", "type": "uint256"}
+      ],
+      "name": "stakeAsValidator",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "bytes32", "name": "txHash", "type": "bytes32"},
+        {"internalType": "uint256", "name": "riskScore", "type": "uint256"},
+        {"internalType": "string", "name": "threatType", "type": "string"}
+      ],
+      "name": "submitRiskAssessment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "address", "name": "contractAddr", "type": "address"},
+        {"internalType": "uint256", "name": "score", "type": "uint256"}
+      ],
+      "name": "updateRiskScore",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

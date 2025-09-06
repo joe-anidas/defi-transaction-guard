@@ -7,10 +7,13 @@
     "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js --network localhost",
     "deploy:testnet": "hardhat run scripts/deploy.js --network blockdag_testnet",
+    "verify": "hardhat verify",
     "test": "hardhat test",
+    "test:integration": "hardhat test test/Integration.test.js",
+    "test:unit": "hardhat test test/TransactionGuard.test.js",
+    "start-demo": "node scripts/start-demo.js",
     "node": "hardhat node",
     "clean": "hardhat clean",
-    "verify": "hardhat verify",
     "size": "hardhat size-contracts",
     "setup": "npm install && npm run compile"
   },
@@ -27,12 +30,11 @@
   "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@openzeppelin/contracts": "^4.9.3",
     "dotenv": "^16.3.1",
     "hardhat": "^2.19.0",
     "hardhat-contract-sizer": "^2.10.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.3"
+    "@openzeppelin/contracts": "^4.9.6"
   }
 }

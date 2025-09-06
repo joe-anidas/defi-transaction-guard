@@ -30,9 +30,21 @@ else
     exit 1
 fi
 
+# Run tests to ensure everything works
+echo -e "${BLUE}🧪 Running tests...${NC}"
+npm test
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ All tests passed${NC}"
+else
+    echo -e "${RED}❌ Some tests failed${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}🎉 Blockchain setup complete!${NC}"
 echo ""
 echo "📋 Next steps:"
-echo "1. Start blockchain: npm run node"
+echo "1. Start blockchain: npm run node (in separate terminal)"
 echo "2. Deploy contracts: npm run deploy"
-echo "3. Run tests: npm test"
+echo "3. Start backend: cd ../backend && go run main.go"
+echo "4. Start frontend: cd ../frontend && npm run dev"

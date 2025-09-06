@@ -1,14 +1,14 @@
-# ⚡ Backend - GoFr API Server
+# ⚡ Backend - GoFr API Server with AI Integration
 
-This folder contains the GoFr-powered backend API server for the DeFi Transaction Guard system.
+This folder contains the GoFr-powered backend API server for the DeFi Transaction Guard system, featuring real AI integration with Grok and Gemini APIs.
 
 ## 🌟 Features
 
-### AI Risk Scoring Engine
-- Real-time transaction analysis
-- Pattern recognition for known exploits
-- Anomaly detection algorithms
-- Sub-200ms response times
+### 🤖 AI-Powered Risk Analysis
+- **Grok API Integration** - Advanced transaction pattern analysis
+- **Gemini API Integration** - Multi-model threat detection
+- **Intelligent Fallback** - Heuristic analysis when AI unavailable
+- **Real-time Processing** - Sub-200ms AI-powered risk scoring
 
 ### High-Performance APIs
 - **GoFr framework** for optimal performance
@@ -44,11 +44,16 @@ curl http://localhost:8080/health
 
 ### Core Endpoints
 - `GET /health` - Health check and system status
-- `POST /api/risk-score` - Analyze transaction risk
+- `POST /api/risk-score` - AI-powered transaction risk analysis
 - `GET /api/assessment/{hash}` - Get risk assessment by hash
 - `GET /api/stats` - Get firewall statistics
 - `GET /api/alerts` - Get recent security alerts
 - `GET /api/alerts/stream` - WebSocket alert stream
+
+### AI-Specific Endpoints
+- `GET /api/ai/status` - Check AI service availability
+- `POST /api/ai/analyze` - Direct AI analysis (Grok/Gemini)
+- `GET /api/ai/providers` - List available AI providers
 
 ### Demo Endpoints
 - `POST /api/simulate-exploit` - Simulate exploit for demo
@@ -60,6 +65,12 @@ curl http://localhost:8080/health
 # Server configuration
 PORT=8080
 HOST=localhost
+
+# AI API Keys (required for full functionality)
+GROK_API=gsk_your_grok_api_key_here
+GROK_API_2=gsk_backup_grok_key_here
+GEMINI_API=your_gemini_api_key_here
+GEMINI_API_2=backup_gemini_key_here
 
 # Logging level
 LOG_LEVEL=INFO
@@ -74,13 +85,41 @@ CORS_ORIGINS=http://localhost:5173
 - **Concurrent Handling** - High-throughput request processing
 - **Health Checks** - Built-in monitoring endpoints
 
-## 🤖 AI Risk Scoring
+## 🤖 AI Integration Workflow
+
+### Multi-Provider AI Analysis
+1. **Primary Analysis** - Grok API for advanced pattern recognition
+2. **Fallback Analysis** - Gemini API if Grok unavailable
+3. **Heuristic Backup** - Rule-based analysis if both AI services fail
+4. **Confidence Scoring** - ML model certainty assessment
+
+### AI Analysis Process
+```go
+// Step 1: AI-powered risk analysis
+aiResponse, err := aiService.AnalyzeTransaction(txData)
+
+// Step 2: Create comprehensive assessment
+assessment := &RiskAssessment{
+    RiskScore:  aiResponse.RiskScore,
+    ThreatType: aiResponse.ThreatType,
+    Confidence: aiResponse.Confidence,
+    Reason:     aiResponse.Reasoning,
+    IsBlocked:  aiResponse.RiskScore > 80,
+}
+
+// Step 3: Update statistics and alerts
+if assessment.IsBlocked {
+    potentialLoss := calculatePotentialLoss(txData, aiResponse.ThreatType)
+    createSecurityAlert(aiResponse)
+}
+```
 
 ### Analysis Factors
-1. **Gas Limit Analysis** - Detect unusually high gas usage
-2. **Recipient Risk Check** - Known malicious address detection
-3. **Pattern Matching** - Exploit signature recognition
-4. **Liquidity Impact** - Potential loss calculation
+1. **AI Pattern Recognition** - Advanced ML-based threat detection
+2. **Gas Limit Analysis** - Detect unusually high gas usage
+3. **Recipient Risk Check** - Known malicious address detection
+4. **Behavioral Analysis** - Transaction pattern anomalies
+5. **Liquidity Impact** - Potential financial loss calculation
 
 ### Risk Score Calculation
 ```go

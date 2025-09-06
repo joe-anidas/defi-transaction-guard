@@ -91,10 +91,14 @@ export const useBlockchain = () => {
         throw new Error('No Web3 provider available. Please install MetaMask.')
       }
 
-      // Check if network is supported
+      // For demo purposes, allow connection on any network
+      // In production, you'd want to enforce specific networks
       const network = await provider.getNetwork()
+      console.log(`Connected to network: ${network.chainId}`)
+      
       if (!isNetworkSupported(network.chainId)) {
-        throw new Error(`Unsupported network. Please switch to localhost (31337) or BlockDAG testnet.`)
+        console.warn(`Network ${network.chainId} not officially supported, but continuing for demo...`)
+        // You could add network switching logic here if needed
       }
 
       await window.ethereum.request({ method: 'eth_requestAccounts' })
@@ -115,7 +119,7 @@ export const useBlockchain = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }   
 
   const disconnectWallet = () => {
     setSigner(null)

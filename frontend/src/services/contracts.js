@@ -134,5 +134,54 @@ export const SUPPORTED_NETWORKS = {
 }
 
 export const isNetworkSupported = (chainId) => {
-  return Object.keys(SUPPORTED_NETWORKS).includes(chainId.toString())
+  // For demo purposes, be more flexible with networks
+  // In production, you'd want to be more strict
+  const supportedChains = Object.keys(SUPPORTED_NETWORKS).map(id => parseInt(id))
+  const commonTestnets = [1337, 31337, 1, 5, 137, 80001] // Include common networks
+  
+  return supportedChains.includes(chainId) || commonTestnets.includes(chainId)
+}
+
+// Add network to MetaMask
+export const addNetworkToWallet = async (chainId) => {
+  const network = SUPPORTED_NETWORKS[chainId]
+  if (!network) throw new Error('Unsupported network')
+
+  try {
+    await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: `0x${chainId.toString(16)}`,
+        chainName: network.name,
+        rpcUrls: [network.rpcUrl],
+        nativeCurrency: {
+          name: 'ETH',
+          symbol: 'ETH',
+          decimals: 18
+        }
+      }]
+    })
+  } catch (error) {
+    console.error('Error adding network:', error)
+    throw error
+  }
+}
+
+// Switch to supported network
+export const switchToSupportedNetwork = async () => {
+  try {
+    // Try localhost first (for development)
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x7a69' }] // 31337 in hex
+    })
+    return 31337
+  } catch (error) {
+    if (error.code === 4902) {
+      // Network not added, add it
+      await addNetworkToWallet(31337)
+      return 31337
+    }
+    throw error
+  }
 }
