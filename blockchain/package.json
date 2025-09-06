@@ -1,0 +1,38 @@
+{
+  "name": "defi-transaction-guard-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for DeFi Transaction Guard - Real-time exploit firewall",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network blockdag_testnet",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "clean": "hardhat clean",
+    "verify": "hardhat verify",
+    "size": "hardhat size-contracts",
+    "setup": "npm install && npm run compile"
+  },
+  "keywords": [
+    "defi",
+    "security",
+    "blockchain",
+    "smart-contracts",
+    "exploit-prevention",
+    "blockdag",
+    "hackathon"
+  ],
+  "author": "DeFi Transaction Guard Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^4.9.3",
+    "dotenv": "^16.3.1",
+    "hardhat": "^2.19.0",
+    "hardhat-contract-sizer": "^2.10.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3"
+  }
+}
