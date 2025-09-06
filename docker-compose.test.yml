@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  redis-cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru
+    networks:
+      - defi-guard-network
+
+  defi-guard-ai:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - GROK_API_KEY=${GROK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BLOCKDAG_API_KEY=${BLOCKDAG_API_KEY}
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      - PORT=5000
+      - DEBUG=true
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis-cache
+    networks:
+      - defi-guard-network
+    volumes:
+      - ./ai-service:/app
+    restart: unless-stopped
+
+  defi-guard-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - HTTP_PORT=8080
+      - METRICS_PORT=9090
+      - AI_SERVICE_URL=http://defi-guard-ai:5000
+      - GROK_API_KEY=${GROK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BLOCKCHAIN_RPC_URL=https://rpc.ankr.com/eth
+      - BLOCKDAG_NODE_URL=https://rpc.blockdag.network
+      - BLOCKDAG_API_KEY=${BLOCKDAG_API_KEY}
+      - BLOCKDAG_NETWORK_ID=mainnet
+    depends_on:
+      - defi-guard-ai
+    networks:
+      - defi-guard-network
+    restart: unless-stopped
+
+  defi-guard-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+      - REACT_APP_AI_SERVICE_URL=http://localhost:5000
+      - REACT_APP_BLOCKDAG_ENABLED=true
+    depends_on:
+      - defi-guard-backend
+    networks:
+      - defi-guard-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - defi-guard-network
+    restart: unless-stopped
+
+networks:
+  defi-guard-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:

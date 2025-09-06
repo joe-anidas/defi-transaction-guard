@@ -1,0 +1,194 @@
+---
+version: "2.0"
+
+services:
+  defi-guard-ai:
+    image: your-dockerhub-username/defi-guard-ai:latest
+    expose:
+      - port: 5000
+        as: 80
+        to:
+          - global: true
+    env:
+      - GROK_API_KEY=
+      - GEMINI_API_KEY=
+      - BLOCKDAG_API_KEY=
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      - PORT=5000
+      - DEBUG=false
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - redis-cache
+
+  defi-guard-backend:
+    image: your-dockerhub-username/defi-guard-backend:latest
+    expose:
+      - port: 8080
+        as: 8080
+        to:
+          - service: defi-guard-frontend
+    env:
+      - HTTP_PORT=8080
+      - METRICS_PORT=9090
+      - AI_SERVICE_URL=http://defi-guard-ai:5000
+      - GROK_API_KEY=
+      - GEMINI_API_KEY=
+      - BLOCKCHAIN_RPC_URL=https://rpc.ankr.com/eth
+      - BLOCKDAG_NODE_URL=https://rpc.blockdag.network
+      - BLOCKDAG_API_KEY=
+      - BLOCKDAG_NETWORK_ID=mainnet
+    depends_on:
+      - defi-guard-ai
+
+  defi-guard-frontend:
+    image: your-dockerhub-username/defi-guard-frontend:latest
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true
+    env:
+      - REACT_APP_API_URL=http://defi-guard-backend:8080
+      - REACT_APP_AI_SERVICE_URL=http://defi-guard-ai:5000
+      - REACT_APP_BLOCKDAG_ENABLED=true
+    depends_on:
+      - defi-guard-backend
+
+  redis-cache:
+    image: redis:7-alpine
+    expose:
+      - port: 6379
+        to:
+          - service: defi-guard-ai
+    command:
+      - redis-server
+      - --maxmemory
+      - 1gb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+
+  prometheus-monitoring:
+    image: prom/prometheus:latest
+    expose:
+      - port: 9090
+        as: 9090
+        to:
+          - global: true
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.enable-lifecycle
+
+profiles:
+  compute:
+    defi-guard-ai:
+      resources:
+        cpu:
+          units: 4.0
+        memory:
+          size: 8Gi
+        storage:
+          size: 20Gi
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+                - model: rtx4090
+                - model: rtx3080ti
+                - model: rtx3080
+                - model: a100
+                - model: v100
+                - model: rtx3070
+
+    defi-guard-backend:
+      resources:
+        cpu:
+          units: 2.0
+        memory:
+          size: 4Gi
+        storage:
+          size: 10Gi
+
+    defi-guard-frontend:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 2Gi
+        storage:
+          size: 5Gi
+
+    redis-cache:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 1Gi
+        storage:
+          size: 2Gi
+
+    prometheus-monitoring:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 2Gi
+        storage:
+          size: 10Gi
+
+  placement:
+    akash:
+      attributes:
+        host: akash
+        datacenter: us-west
+        gpu: nvidia
+      signedBy:
+        anyOf:
+          - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
+          - "akash18qa2a2ltfyvkyj0ggj3hkvuj6twzyumuaru9s4"
+      pricing:
+        defi-guard-ai:
+          denom: uakt
+          amount: 8000
+        defi-guard-backend:
+          denom: uakt
+          amount: 2000
+        defi-guard-frontend:
+          denom: uakt
+          amount: 1000
+        redis-cache:
+          denom: uakt
+          amount: 500
+        prometheus-monitoring:
+          denom: uakt
+          amount: 1000
+
+deployment:
+  defi-guard-ai:
+    akash:
+      profile: defi-guard-ai
+      count: 1
+  defi-guard-backend:
+    akash:
+      profile: defi-guard-backend
+      count: 1
+  defi-guard-frontend:
+    akash:
+      profile: defi-guard-frontend
+      count: 1
+  redis-cache:
+    akash:
+      profile: redis-cache
+      count: 1
+  prometheus-monitoring:
+    akash:
+      profile: prometheus-monitoring
+      count: 1

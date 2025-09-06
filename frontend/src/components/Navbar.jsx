@@ -14,48 +14,51 @@ function Navbar() {
   } = useBlockchain()
 
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+    <nav className="bg-black/80 backdrop-blur-md border-b border-gray-800/50 px-6 py-4 sticky top-0 z-50">
       <div className="flex justify-between items-center max-w-7xl mx-auto">
         {/* Logo */}
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">🛡️</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-xl">🛡️</span>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              Transaction Guard
-            </span>
+            <div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                DeFi Guard
+              </span>
+              <div className="text-xs text-gray-400 -mt-1">Real-time Protection</div>
+            </div>
           </div>
         </div>
 
         {/* Navigation Links */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-8">
           <Link
             to="/"
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
               location.pathname === '/' 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105' 
+                : 'text-gray-300 hover:text-white hover:bg-gray-800/50 hover:transform hover:scale-105'
             }`}
           >
             Dashboard
           </Link>
           <Link
             to="/demo"
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
               location.pathname === '/demo' 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg transform scale-105' 
+                : 'text-gray-300 hover:text-white hover:bg-gray-800/50 hover:transform hover:scale-105'
             }`}
           >
             Live Demo
           </Link>
           <Link
             to="/tech-proof"
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
               location.pathname === '/tech-proof' 
-                ? 'bg-purple-600 text-white' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg transform scale-105' 
+                : 'text-gray-300 hover:text-white hover:bg-gray-800/50 hover:transform hover:scale-105'
             }`}
           >
             🏆 Tech Proof

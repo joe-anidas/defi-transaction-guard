@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"defi-transaction-guard/ai"
+	"defi-transaction-guard/blockchain"
+	"defi-transaction-guard/blockdag"
 	"gofr.dev/pkg/gofr"
 )
 
@@ -63,17 +67,45 @@ var (
 		Uptime:              "99.97%",
 	}
 	
-	// Known malicious patterns
-	maliciousAddresses = map[string]bool{
-		"0x1234567890abcdef1234567890abcdef12345678": true,
-		"0xabcdef1234567890abcdef1234567890abcdef12": true,
-		"0x9876543210fedcba9876543210fedcba98765432": true,
-	}
+	// AI Manager for real AI integration
+	aiManager *ai.AIManager
+	
+	// Blockchain integration for smart contract updates
+	blockchainIntegration *blockchain.BlockchainIntegration
+	
+	// BlockDAG integration for advanced DAG features
+	blockdagIntegration *blockdag.BlockDAGIntegration
 	
 	startTime = time.Now()
 )
 
 func main() {
+	// Initialize AI Manager with real providers
+	aiManager = ai.NewAIManager()
+	
+	// Initialize blockchain integration
+	var err error
+	blockchainIntegration, err = blockchain.NewBlockchainIntegration()
+	if err != nil {
+		log.Printf("⚠️ Blockchain integration failed: %v", err)
+		log.Println("🔄 Continuing without blockchain integration...")
+	} else {
+		log.Println("✅ Blockchain integration initialized")
+	}
+	
+	// Initialize BlockDAG integration
+	blockdagIntegration, err = blockdag.NewBlockDAGIntegration()
+	if err != nil {
+		log.Printf("⚠️ BlockDAG integration failed: %v", err)
+		log.Println("🔄 Continuing without BlockDAG integration...")
+	} else {
+		log.Println("✅ BlockDAG integration initialized")
+	}
+	
+	// Set environment variables for GoFr configuration
+	os.Setenv("HTTP_PORT", "8080")
+	os.Setenv("METRICS_PORT", "9090")
+	
 	app := gofr.New()
 
 	// Health check endpoint
@@ -83,6 +115,7 @@ func main() {
 			"timestamp": time.Now().Unix(),
 			"uptime":    time.Since(startTime).String(),
 			"service":   "DeFi Transaction Guard API",
+			"aiStatus":  aiManager.GetProviderStatus(),
 		}, nil
 	})
 
@@ -105,6 +138,20 @@ func main() {
 	app.GET("/api/ai/status", getAIStatus)
 	app.POST("/api/ai/analyze", analyzeWithAI)
 	app.GET("/api/ai/providers", getAIProviders)
+	
+	// Blockchain integration endpoints
+	app.POST("/api/blockchain/update-risk", updateBlockchainRiskScore)
+	app.GET("/api/blockchain/risk/{address}", getBlockchainRiskScore)
+	app.GET("/api/blockchain/stats", getBlockchainStats)
+	
+	// BlockDAG integration endpoints
+	app.GET("/api/blockdag/transaction/{hash}", getBlockDAGTransaction)
+	app.GET("/api/blockdag/stats", getBlockDAGStats)
+	app.POST("/api/blockdag/risk-profile", updateBlockDAGRiskProfile)
+	app.GET("/api/blockdag/risk-profile/{address}", getBlockDAGRiskProfile)
+	app.GET("/api/blockdag/health", getBlockDAGHealth)
+	app.GET("/api/blockdag/dag/tips", getDAGTips)
+	app.GET("/api/blockdag/dag/validate", validateDAGStructure)
 
 	log.Println("🛡️ DeFi Transaction Guard API starting on :8080")
 	log.Println("🔗 Powered by GoFr Framework")
@@ -123,11 +170,30 @@ func analyzeTransaction(c *gofr.Context) (interface{}, error) {
 
 	c.Logger.Infof("🔍 Analyzing transaction: %s", txData.Hash)
 	
-	// Simulate AI analysis with realistic patterns
-	riskScore := calculateRiskScore(txData)
-	threatType := identifyThreatType(txData, riskScore)
-	confidence := calculateConfidence(riskScore)
-	reason := generateReason(txData, threatType)
+	// Convert to AI package format
+	aiTxData := ai.TransactionData{
+		Hash:     txData.Hash,
+		From:     txData.From,
+		To:       txData.To,
+		Value:    txData.Value,
+		GasLimit: txData.GasLimit,
+		Data:     txData.Data,
+	}
+	
+	// Perform real AI analysis
+	aiResult, err := aiManager.AnalyzeTransaction(aiTxData)
+	if err != nil {
+		c.Logger.Errorf("AI analysis failed: %v", err)
+		return nil, fmt.Errorf("AI analysis failed: %w", err)
+	}
+	
+	// Update blockchain with AI results
+	analyzeTransactionWithBlockchain(txData, aiResult)
+	
+	riskScore := aiResult.RiskScore
+	threatType := aiResult.ThreatType
+	confidence := aiResult.Confidence
+	reason := aiResult.Reasoning
 	
 	assessment := &RiskAssessment{
 		TxHash:     txData.Hash,
@@ -173,104 +239,17 @@ func analyzeTransaction(c *gofr.Context) (interface{}, error) {
 	return map[string]interface{}{
 		"assessment": assessment,
 		"aiInsights": map[string]interface{}{
-			"provider":   "heuristic",
-			"indicators": []string{"pattern-matching", "rule-based"},
-			"reasoning":  reason,
+			"provider":     aiResult.Provider,
+			"indicators":   aiResult.Indicators,
+			"reasoning":    reason,
+			"processTime":  aiResult.ProcessTime,
+			"confidence":   confidence,
 		},
 		"blocked": assessment.IsBlocked,
 	}, nil
 }
 
-// calculateRiskScore uses heuristics to simulate AI risk scoring
-func calculateRiskScore(tx TransactionData) int {
-	score := 0
-	
-	// Check recipient address
-	if maliciousAddresses[strings.ToLower(tx.To)] {
-		score += 40
-	}
-	
-	// Check gas limit (suspicious if too high)
-	if gasLimit, err := strconv.ParseInt(tx.GasLimit, 10, 64); err == nil {
-		if gasLimit > 300000 {
-			score += 25
-		}
-	}
-	
-	// Check transaction value
-	if strings.Contains(tx.Value, "000") && len(tx.Value) > 10 {
-		score += 15 // Large transactions are riskier
-	}
-	
-	// Check for suspicious data patterns
-	if len(tx.Data) > 1000 {
-		score += 10 // Complex calls might be exploits
-	}
-	
-	// Add some randomness to simulate ML model uncertainty
-	score += rand.Intn(20) - 10
-	
-	// Ensure score is within bounds
-	if score < 0 {
-		score = 0
-	}
-	if score > 100 {
-		score = 100
-	}
-	
-	return score
-}
 
-// identifyThreatType categorizes the type of threat
-func identifyThreatType(tx TransactionData, riskScore int) string {
-	if maliciousAddresses[strings.ToLower(tx.To)] {
-		threats := []string{"Liquidity Drain", "Rug Pull Attempt", "Flash Loan Attack", "Governance Exploit"}
-		return threats[rand.Intn(len(threats))]
-	}
-	
-	if riskScore > 80 {
-		return "High Risk Transaction"
-	}
-	
-	if riskScore > 50 {
-		return "Suspicious Activity"
-	}
-	
-	return "Normal Transaction"
-}
-
-// calculateConfidence simulates ML model confidence
-func calculateConfidence(riskScore int) float64 {
-	base := float64(riskScore) / 100.0
-	// Add some variance
-	confidence := base + (rand.Float64()-0.5)*0.1
-	
-	if confidence < 0 {
-		confidence = 0
-	}
-	if confidence > 1 {
-		confidence = 1
-	}
-	
-	return confidence
-}
-
-// generateReason provides human-readable explanation
-func generateReason(tx TransactionData, threatType string) string {
-	reasons := []string{
-		"Suspicious gas limit and recipient pattern detected",
-		"Known malicious contract interaction",
-		"Unusual transaction value pattern",
-		"Complex call data suggests exploit attempt",
-		"Pattern matches known attack vectors",
-	}
-	
-	if maliciousAddresses[strings.ToLower(tx.To)] {
-		return "Recipient address flagged as malicious"
-	}
-	
-	return reasons[rand.Intn(len(reasons))]
-}
 
 // calculatePotentialLoss estimates potential financial loss from an attack
 func calculatePotentialLoss(tx TransactionData, threatType string) int64 {
@@ -419,21 +398,7 @@ func simulateExploit(c *gofr.Context) (interface{}, error) {
 
 // getAIStatus returns the status of AI services
 func getAIStatus(c *gofr.Context) (interface{}, error) {
-	return map[string]interface{}{
-		"aiEnabled": true,
-		"providers": map[string]interface{}{
-			"grok": map[string]interface{}{
-				"available": true,
-				"status":    "simulated",
-			},
-			"gemini": map[string]interface{}{
-				"available": true,
-				"status":    "simulated",
-			},
-		},
-		"fallbackEnabled": true,
-		"lastUpdate":      time.Now().Unix(),
-	}, nil
+	return aiManager.GetProviderStatus(), nil
 }
 
 // analyzeWithAI provides direct AI analysis endpoint
@@ -443,51 +408,304 @@ func analyzeWithAI(c *gofr.Context) (interface{}, error) {
 		return nil, fmt.Errorf("invalid transaction data: %w", err)
 	}
 
-	// Simulate AI analysis
-	riskScore := calculateRiskScore(txData)
-	threatType := identifyThreatType(txData, riskScore)
-	confidence := calculateConfidence(riskScore)
-	reasoning := generateReason(txData, threatType)
+	// Convert to AI package format
+	aiTxData := ai.TransactionData{
+		Hash:     txData.Hash,
+		From:     txData.From,
+		To:       txData.To,
+		Value:    txData.Value,
+		GasLimit: txData.GasLimit,
+		Data:     txData.Data,
+	}
+
+	// Perform real AI analysis
+	result, err := aiManager.AnalyzeTransaction(aiTxData)
+	if err != nil {
+		return nil, fmt.Errorf("AI analysis failed: %w", err)
+	}
 
 	return map[string]interface{}{
-		"success":    true,
-		"provider":   "simulated-ai",
-		"riskScore":  riskScore,
-		"threatType": threatType,
-		"confidence": confidence,
-		"reasoning":  reasoning,
-		"indicators": []string{"pattern-matching", "heuristic-analysis"},
-		"timestamp":  time.Now().Unix(),
+		"success":     true,
+		"provider":    result.Provider,
+		"riskScore":   result.RiskScore,
+		"threatType":  result.ThreatType,
+		"confidence":  result.Confidence,
+		"reasoning":   result.Reasoning,
+		"indicators":  result.Indicators,
+		"processTime": result.ProcessTime,
+		"timestamp":   time.Now().Unix(),
 	}, nil
 }
 
 // getAIProviders returns available AI providers and their capabilities
 func getAIProviders(c *gofr.Context) (interface{}, error) {
+	return aiManager.GetProviderCapabilities(), nil
+}
+
+// updateBlockchainRiskScore updates risk score on the blockchain
+func updateBlockchainRiskScore(c *gofr.Context) (interface{}, error) {
+	if blockchainIntegration == nil {
+		return nil, fmt.Errorf("blockchain integration not available")
+	}
+	
+	var request struct {
+		ContractAddress string `json:"contractAddress"`
+		RiskScore       int    `json:"riskScore"`
+	}
+	
+	if err := c.Bind(&request); err != nil {
+		return nil, fmt.Errorf("invalid request data: %w", err)
+	}
+	
+	if request.RiskScore < 0 || request.RiskScore > 100 {
+		return nil, fmt.Errorf("risk score must be between 0 and 100")
+	}
+	
+	err := blockchainIntegration.UpdateRiskScore(request.ContractAddress, request.RiskScore)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update blockchain: %w", err)
+	}
+	
+	c.Logger.Infof("📡 Updated blockchain risk score: %s -> %d%%", request.ContractAddress, request.RiskScore)
+	
 	return map[string]interface{}{
-		"providers": []map[string]interface{}{
-			{
-				"name":         "Grok (Simulated)",
-				"provider":     "grok",
-				"available":    true,
-				"capabilities": []string{"transaction-analysis", "threat-detection", "risk-scoring"},
-				"model":        "grok-beta",
-				"latency":      "~150ms",
-			},
-			{
-				"name":         "Gemini (Simulated)",
-				"provider":     "gemini",
-				"available":    true,
-				"capabilities": []string{"transaction-analysis", "pattern-recognition", "risk-assessment"},
-				"model":        "gemini-pro",
-				"latency":      "~120ms",
-			},
-		},
-		"fallback": map[string]interface{}{
-			"name":         "Heuristic Analysis",
-			"provider":     "fallback",
-			"available":    true,
-			"capabilities": []string{"rule-based", "pattern-matching", "fast-analysis"},
-			"latency":      "<100ms",
-		},
+		"success":         true,
+		"contractAddress": request.ContractAddress,
+		"riskScore":       request.RiskScore,
+		"timestamp":       time.Now().Unix(),
+		"provider":        "blockchain",
+	}, nil
+}
+
+// getBlockchainRiskScore retrieves risk score from blockchain
+func getBlockchainRiskScore(c *gofr.Context) (interface{}, error) {
+	if blockchainIntegration == nil {
+		return nil, fmt.Errorf("blockchain integration not available")
+	}
+	
+	address := c.PathParam("address")
+	if address == "" {
+		return nil, fmt.Errorf("contract address required")
+	}
+	
+	riskScore, err := blockchainIntegration.GetContractRiskScore(address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get risk score: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"contractAddress": address,
+		"riskScore":       riskScore,
+		"timestamp":       time.Now().Unix(),
+		"source":          "blockchain",
+	}, nil
+}
+
+// getBlockchainStats retrieves firewall statistics from blockchain
+func getBlockchainStats(c *gofr.Context) (interface{}, error) {
+	if blockchainIntegration == nil {
+		return nil, fmt.Errorf("blockchain integration not available")
+	}
+	
+	stats, err := blockchainIntegration.GetFirewallStats()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get blockchain stats: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success":   true,
+		"stats":     stats,
+		"timestamp": time.Now().Unix(),
+		"source":    "blockchain",
+	}, nil
+}
+
+// Enhanced analyzeTransaction with blockchain integration
+func analyzeTransactionWithBlockchain(txData TransactionData, aiResult *ai.AIAnalysisResult) error {
+	if blockchainIntegration == nil {
+		return nil // Skip if blockchain not available
+	}
+	
+	// Update risk score on blockchain if it's for a contract interaction
+	if txData.To != "" && len(txData.Data) > 0 {
+		// This is a contract interaction, update its risk score
+		go func() {
+			err := blockchainIntegration.UpdateRiskScore(txData.To, aiResult.RiskScore)
+			if err != nil {
+				log.Printf("⚠️ Failed to update blockchain risk score: %v", err)
+			}
+		}()
+	}
+	
+	return nil
+}
+
+// BlockDAG Integration Handlers
+
+// getBlockDAGTransaction retrieves a transaction from BlockDAG network
+func getBlockDAGTransaction(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	hash := c.PathParam("hash")
+	if hash == "" {
+		return nil, fmt.Errorf("transaction hash required")
+	}
+	
+	tx, err := blockdagIntegration.GetTransaction(hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get BlockDAG transaction: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success":     true,
+		"transaction": tx,
+		"network":     "BlockDAG",
+		"timestamp":   time.Now().Unix(),
+	}, nil
+}
+
+// getBlockDAGStats retrieves BlockDAG network statistics
+func getBlockDAGStats(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	stats, err := blockdagIntegration.GetNetworkStats()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get BlockDAG stats: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success":   true,
+		"stats":     stats,
+		"network":   "BlockDAG",
+		"timestamp": time.Now().Unix(),
+	}, nil
+}
+
+// updateBlockDAGRiskProfile updates a contract's risk profile on BlockDAG
+func updateBlockDAGRiskProfile(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	var request struct {
+		ContractAddress string `json:"contractAddress"`
+		RiskScore       int    `json:"riskScore"`
+		ThreatLevel     string `json:"threatLevel"`
+	}
+	
+	if err := c.Bind(&request); err != nil {
+		return nil, fmt.Errorf("invalid request data: %w", err)
+	}
+	
+	if request.RiskScore < 0 || request.RiskScore > 100 {
+		return nil, fmt.Errorf("risk score must be between 0 and 100")
+	}
+	
+	if request.ThreatLevel == "" {
+		if request.RiskScore >= 80 {
+			request.ThreatLevel = "HIGH"
+		} else if request.RiskScore >= 50 {
+			request.ThreatLevel = "MEDIUM"
+		} else {
+			request.ThreatLevel = "LOW"
+		}
+	}
+	
+	err := blockdagIntegration.UpdateRiskProfile(request.ContractAddress, request.RiskScore, request.ThreatLevel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update BlockDAG risk profile: %w", err)
+	}
+	
+	c.Logger.Infof("🔗 Updated BlockDAG risk profile: %s -> %d%% (%s)", request.ContractAddress, request.RiskScore, request.ThreatLevel)
+	
+	return map[string]interface{}{
+		"success":         true,
+		"contractAddress": request.ContractAddress,
+		"riskScore":       request.RiskScore,
+		"threatLevel":     request.ThreatLevel,
+		"network":         "BlockDAG",
+		"timestamp":       time.Now().Unix(),
+	}, nil
+}
+
+// getBlockDAGRiskProfile retrieves a contract's risk profile from BlockDAG
+func getBlockDAGRiskProfile(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	address := c.PathParam("address")
+	if address == "" {
+		return nil, fmt.Errorf("contract address required")
+	}
+	
+	profile, err := blockdagIntegration.GetRiskProfile(address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get BlockDAG risk profile: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success": true,
+		"profile": profile,
+		"network": "BlockDAG",
+	}, nil
+}
+
+// getBlockDAGHealth checks BlockDAG network health
+func getBlockDAGHealth(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	health, err := blockdagIntegration.GetHealthStatus()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get BlockDAG health: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success": true,
+		"health":  health,
+		"network": "BlockDAG",
+	}, nil
+}
+
+// getDAGTips retrieves current DAG tips
+func getDAGTips(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	tips, err := blockdagIntegration.GetDAGTips()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DAG tips: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success": true,
+		"tips":    tips,
+		"count":   len(tips),
+		"network": "BlockDAG",
+	}, nil
+}
+
+// validateDAGStructure validates the DAG structure integrity
+func validateDAGStructure(c *gofr.Context) (interface{}, error) {
+	if blockdagIntegration == nil {
+		return nil, fmt.Errorf("BlockDAG integration not available")
+	}
+	
+	valid, err := blockdagIntegration.ValidateDAGStructure()
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate DAG structure: %w", err)
+	}
+	
+	return map[string]interface{}{
+		"success": true,
+		"valid":   valid,
+		"network": "BlockDAG",
 	}, nil
 }
