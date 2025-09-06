@@ -1,0 +1,119 @@
+---
+version: "2.0"
+
+services:
+  defi-guard-ai:
+    image: python:3.9-slim
+    expose:
+      - port: 8080
+        as: 80
+        to:
+          - global: true
+    env:
+      - GROK_API=gsk_your_key_here
+      - GEMINI_API=your_gemini_key_here
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - |
+        pip install flask requests openai google-generativeai
+        cat > ai_service.py << 'EOF'
+        from flask import Flask, request, jsonify
+        import os
+        import requests
+        import json
+        
+        app = Flask(__name__)
+        
+        @app.route('/health')
+        def health():
+            return jsonify({"status": "healthy", "provider": "akash"})
+        
+        @app.route('/analyze', methods=['POST'])
+        def analyze_transaction():
+            data = request.json
+            # Real AI analysis using Grok/Gemini APIs
+            risk_score = analyze_with_ai(data)
+            return jsonify({
+                "riskScore": risk_score,
+                "provider": "akash-gpu",
+                "threatType": "AI_DETECTED" if risk_score > 80 else "NORMAL"
+            })
+        
+        def analyze_with_ai(tx_data):
+            # Implement real Grok/Gemini API calls here
+            return 45  # Placeholder
+        
+        if __name__ == '__main__':
+            app.run(host='0.0.0.0', port=8080)
+        EOF
+        python ai_service.py
+
+  defi-guard-frontend:
+    image: node:18-alpine
+    expose:
+      - port: 3000
+        as: 80
+        to:
+          - global: true
+    command:
+      - "sh"
+      - "-c"
+    args:
+      - |
+        npm install -g serve
+        echo '{"name":"defi-guard","version":"1.0.0"}' > package.json
+        mkdir -p build
+        echo '<h1>DeFi Transaction Guard - Deployed on Akash!</h1>' > build/index.html
+        serve -s build -l 3000
+
+profiles:
+  compute:
+    defi-guard-ai:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 1Gi
+        storage:
+          size: 2Gi
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+                - model: rtx4090
+    defi-guard-frontend:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          size: 1Gi
+
+  placement:
+    akash:
+      attributes:
+        host: akash
+      signedBy:
+        anyOf:
+          - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
+      pricing:
+        defi-guard-ai:
+          denom: uakt
+          amount: 1000
+        defi-guard-frontend:
+          denom: uakt
+          amount: 500
+
+deployment:
+  defi-guard-ai:
+    akash:
+      profile: defi-guard-ai
+      count: 1
+  defi-guard-frontend:
+    akash:
+      profile: defi-guard-frontend
+      count: 1

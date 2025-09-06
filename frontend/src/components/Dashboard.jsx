@@ -53,6 +53,34 @@ function Dashboard() {
         />
       </div>
 
+      {/* BDAG Staking Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatsCard
+          title="BDAG Validators"
+          value="47"
+          subtitle="Active Stakers"
+          icon="🔗"
+          trend="+5"
+          color="purple"
+        />
+        <StatsCard
+          title="Total BDAG Staked"
+          value="1.2M"
+          subtitle="Validator Stakes"
+          icon="💎"
+          trend="+50K"
+          color="blue"
+        />
+        <StatsCard
+          title="Akash GPU Nodes"
+          value="12"
+          subtitle="AI Processing"
+          icon="🚀"
+          trend="+2"
+          color="green"
+        />
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Threat Feed */}

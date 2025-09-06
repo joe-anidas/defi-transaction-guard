@@ -50,6 +50,16 @@ function Navbar() {
           >
             Live Demo
           </Link>
+          <Link
+            to="/tech-proof"
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              location.pathname === '/tech-proof' 
+                ? 'bg-purple-600 text-white' 
+                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            🏆 Tech Proof
+          </Link>         
 
           {/* Wallet Connection */}
           {isConnected ? (

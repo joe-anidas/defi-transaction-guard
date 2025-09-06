@@ -22,7 +22,13 @@ module.exports = {
     blockdag_testnet: {
       url: process.env.BLOCKDAG_RPC_URL || "https://rpc-testnet.blockdag.network",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 12345, // Replace with actual BlockDAG chain ID
+      chainId: 31337, // Replace with actual BlockDAG chain ID
+    },
+    // BlockDAG simulation (for demo when testnet unavailable)
+    blockdag_sim: {
+      url: "http://127.0.0.1:8545",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 31337, // Simulate BlockDAG chain ID
     },
     // For demo purposes, we can use Polygon Mumbai or other testnets
     polygon_mumbai: {
