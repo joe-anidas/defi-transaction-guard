@@ -1,0 +1,225 @@
+---
+version: "2.0"
+
+services:
+  # AI Service - GPU-powered ML inference for transaction analysis
+  defi-ai-service:
+    image: joeanidas/defi-ai-service:latest
+    expose:
+      - port: 5000
+        as: 80
+        to:
+          - global: true
+    env:
+      - GROK_API_KEY=your_grok_api_key_here
+      - GEMINI_API_KEY=your_gemini_api_key_here
+      - BLOCKDAG_API_KEY=your_blockdag_api_key_here
+      - REDIS_HOST=redis-cache
+      - REDIS_PORT=6379
+      - PORT=5000
+      - PYTHONUNBUFFERED=1
+      - GPU_ACCELERATION=true
+      - AI_CACHE_ENABLED=true
+      - LOG_LEVEL=info
+    depends_on:
+      - redis-cache
+
+  # GoFr Backend API - High-performance transaction screening service
+  gofr-backend:
+    image: joeanidas/gofr-backend:latest
+    expose:
+      - port: 8080
+        as: 8080
+        to:
+          - service: defi-frontend
+          - global: true
+    env:
+      - HTTP_PORT=8080
+      - METRICS_PORT=9090
+      - AI_SERVICE_URL=http://defi-ai-service:5000
+      - GROK_API_KEY=your_grok_api_key_here
+      - GEMINI_API_KEY=your_gemini_api_key_here
+      - BLOCKCHAIN_RPC_URL=https://rpc.ankr.com/eth
+      - BLOCKDAG_NODE_URL=https://rpc.blockdag.network
+      - BLOCKDAG_API_KEY=your_blockdag_api_key_here
+      - BLOCKDAG_NETWORK_ID=mainnet
+      - PRIVATE_KEY=your_private_key_here
+      - LOG_LEVEL=info
+    depends_on:
+      - defi-ai-service
+
+  # React Frontend Dashboard - Modern UI for threat monitoring
+  defi-frontend:
+    image: joeanidas/defi-frontend:latest
+    expose:
+      - port: 80
+        as: 80
+        to:
+          - global: true
+    env:
+      - REACT_APP_API_URL=http://gofr-backend:8080
+      - REACT_APP_AI_SERVICE_URL=http://defi-ai-service:5000
+      - REACT_APP_BLOCKDAG_ENABLED=true
+      - REACT_APP_ENVIRONMENT=production
+      - REACT_APP_AKASH_DEPLOYMENT=true
+    depends_on:
+      - gofr-backend
+
+  # Redis Cache - High-performance caching for AI responses
+  redis-cache:
+    image: redis:7-alpine
+    expose:
+      - port: 6379
+        to:
+          - service: defi-ai-service
+    command:
+      - redis-server
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --tcp-keepalive
+      - "60"
+
+  # Prometheus Monitoring - System metrics and observability
+  prometheus-monitor:
+    image: prom/prometheus:latest
+    expose:
+      - port: 9090
+        as: 9090
+        to:
+          - global: true
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+      - --storage.tsdb.retention.time=7d
+    params:
+      storage:
+        data:
+          mount: /prometheus   # Mount path inside container
+
+profiles:
+  compute:
+    # AI Service with GPU for ML inference and threat detection
+    defi-ai-service:
+      resources:
+        cpu:
+          units: 4.0
+        memory:
+          size: 8Gi
+        storage:
+          size: 20Gi
+        gpu:
+          units: 1
+          attributes:
+            vendor:
+              nvidia:
+                - model: rtx4090
+                - model: rtx3080ti
+                - model: rtx3080
+                - model: a100
+                - model: v100
+                - model: rtx3070ti
+                - model: rtx3070
+
+    # GoFr Backend API with high CPU for concurrent processing
+    gofr-backend:
+      resources:
+        cpu:
+          units: 2.0
+        memory:
+          size: 4Gi
+        storage:
+          size: 10Gi
+
+    # React Frontend with optimized resources
+    defi-frontend:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 2Gi
+        storage:
+          size: 5Gi
+
+    # Redis Cache with high memory for AI response caching
+    redis-cache:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 2Gi
+        storage:
+          size: 5Gi
+
+    # Prometheus Monitoring with persistent storage
+    prometheus-monitor:
+      resources:
+        cpu:
+          units: 1.0
+        memory:
+          size: 4Gi
+        storage:
+          - size: 15Gi
+            name: data             # <── give it a name
+            attributes:
+              persistent: true
+              class: beta2
+
+  placement:
+    akash-global:
+      attributes:
+        host: akash
+        datacenter: us-west
+        gpu: nvidia
+        region: global
+      signedBy:
+        anyOf:
+          - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
+          - "akash18qa2a2ltfyvkyj3hkvuj6twzyumuaru9s4"
+      pricing:
+        defi-ai-service:
+          denom: uakt
+          amount: 12000  # Higher pricing for GPU resources
+        gofr-backend:
+          denom: uakt
+          amount: 3000
+        defi-frontend:
+          denom: uakt
+          amount: 1500
+        redis-cache:
+          denom: uakt
+          amount: 800
+        prometheus-monitor:
+          denom: uakt
+          amount: 1200
+
+deployment:
+  defi-ai-service:
+    akash-global:
+      profile: defi-ai-service
+      count: 1
+  gofr-backend:
+    akash-global:
+      profile: gofr-backend
+      count: 1
+  defi-frontend:
+    akash-global:
+      profile: defi-frontend
+      count: 1
+  redis-cache:
+    akash-global:
+      profile: redis-cache
+      count: 1
+  prometheus-monitor:
+    akash-global:
+      profile: prometheus-monitor
+      count: 1

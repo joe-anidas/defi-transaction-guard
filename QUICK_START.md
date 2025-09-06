@@ -1,190 +1,315 @@
-# 🚀 Quick Start Guide - DeFi Transaction Guard
+# 🚀 **DeFi Transaction Guard - Quick Start Guide**
 
-## Prerequisites
+## **⚡ One-Command Setup**
 
-Make sure you have the following installed:
-- **Node.js** (v18 or higher) - [Download here](https://nodejs.org/)
-- **Go** (v1.21 or higher) - [Download here](https://golang.org/dl/)
-- **Git** - [Download here](https://git-scm.com/)
-
-## 🏃‍♂️ Quick Start (3 Steps)
-
-### Step 1: Clone and Setup
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+# Clone and run everything
+git clone https://github.com/your-username/defi-transaction-guard.git
 cd defi-transaction-guard
-
-# Install frontend dependencies
-cd frontend
-npm install
-cd ..
-
-# Install backend dependencies
-cd backend
-go mod tidy
-cd ..
+./run.sh
 ```
 
-### Step 2: Start Backend API
-```bash
-cd backend
-go run .
-```
-**Backend will start on:** http://localhost:8080
-
-### Step 3: Start Frontend (New Terminal)
-```bash
-cd frontend
-npm run dev
-```
-**Frontend will start on:** http://localhost:5173
-
-## 🎯 That's It! 
-
-Open your browser and go to **http://localhost:5173** to see the DeFi Transaction Guard dashboard!
+**That's it!** Your DeFi Transaction Guard will be running at http://localhost:5173
 
 ---
 
-## 🔧 Advanced Setup (Optional)
+## **🔧 Manual Setup (Step by Step)**
 
-### Add Real AI Integration
+### **1. Prerequisites**
+```bash
+# Install required tools
+# Node.js v18+
+# Go v1.21+
+# Python 3.10+
+# Docker & Docker Compose
+```
 
-1. **Get API Keys:**
-   - **Grok API**: https://console.groq.com/
-   - **Gemini API**: https://makersuite.google.com/app/apikey
+### **2. Clone Repository**
+```bash
+git clone https://github.com/your-username/defi-transaction-guard.git
+cd defi-transaction-guard
+```
 
-2. **Configure Backend:**
+### **3. Start Backend (Terminal 1)**
 ```bash
 cd backend
-cp .env.example .env
-
-# Edit .env file with your real API keys
-GROK_API=gsk_your_actual_grok_key_here
-GEMINI_API=your_actual_gemini_key_here
+go mod tidy
+go run main.go
 ```
+**Backend running on**: http://localhost:8080
 
-3. **Restart Backend:**
+### **4. Start AI Service (Terminal 2)**
 ```bash
-go run .
+cd ai-service
+pip install -r requirements.txt
+python app.py
 ```
+**AI Service running on**: http://localhost:5000
 
-### Deploy Smart Contracts (Optional)
+### **5. Start Frontend (Terminal 3)**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+**Frontend running on**: http://localhost:5173
 
-1. **Setup Blockchain:**
+### **6. Deploy Smart Contracts (Terminal 4)**
 ```bash
 cd blockchain
 npm install
-```
-
-2. **Start Local Blockchain:**
-```bash
-npm run node
-```
-
-3. **Deploy Contracts:**
-```bash
 npm run deploy
 ```
 
 ---
 
-## 📱 What You'll See
+## **🎯 Demo Scenarios**
 
-### Dashboard Features:
-- ✅ **Real-time Stats**: Transactions screened, exploits blocked, funds protected
-- ✅ **Live Threat Feed**: Recent blocked attacks with AI confidence scores
-- ✅ **System Status**: AI engine, blockchain, and API gateway health
-- ✅ **Modern UI**: Black-themed design with gradient effects
+### **1. Test AI Analysis**
+```bash
+curl -X POST http://localhost:5000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "from": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "to": "0x9876543210fedcba9876543210fedcba98765432",
+    "value": "1.0",
+    "gasLimit": "21000",
+    "data": "0x"
+  }'
+```
 
-### Demo Features:
-- ✅ **Simulate Exploits**: Test the AI detection system
-- ✅ **Real-time Analysis**: Watch transactions get analyzed in real-time
-- ✅ **Blockchain Integration**: See risk scores updated on-chain
+### **2. Test Backend API**
+```bash
+curl -X POST http://localhost:8080/risk-score \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "from": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "to": "0x9876543210fedcba9876543210fedcba98765432",
+    "value": "1.0",
+    "gasLimit": "21000",
+    "data": "0x"
+  }'
+```
+
+### **3. Test Health Checks**
+```bash
+# AI Service Health
+curl http://localhost:5000/health
+
+# Backend Health
+curl http://localhost:8080/health
+
+# System Status
+curl http://localhost:8080/stats
+```
 
 ---
 
-## 🛠️ Troubleshooting
+## **🌐 Access Points**
 
-### Port Conflicts
-If you get port errors:
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend Dashboard** | http://localhost:5173 | Main UI with real-time monitoring |
+| **Backend API** | http://localhost:8080 | GoFr API server |
+| **AI Service** | http://localhost:5000 | Python AI analysis service |
+| **Health Check** | http://localhost:5000/health | System health monitoring |
+
+---
+
+## **🔧 Configuration**
+
+### **Environment Variables**
+
+Create `.env` files in each service:
+
+#### **Backend (.env)**
 ```bash
-# Kill any processes using the ports
-lsof -ti:8080,5173 | xargs kill -9
-
-# Or use different ports
-HTTP_PORT=8081 go run .  # Backend on 8081
-npm run dev -- --port 3000  # Frontend on 3000
+AI_SERVICE_URL=http://localhost:5000
+GROK_API_KEY=your_grok_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+BLOCKDAG_NODE_URL=https://rpc.blockdag.network
+BLOCKDAG_API_KEY=your_blockdag_api_key_here
+LOG_LEVEL=info
 ```
 
-### Backend Issues
+#### **AI Service (.env)**
 ```bash
-# Check if backend is running
-curl http://localhost:8080/health
-
-# View backend logs
-cd backend
-go run . 2>&1 | tee backend.log
+GROK_API_KEY=your_grok_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+REDIS_HOST=localhost
+REDIS_PORT=6379
+GPU_ACCELERATION=true
 ```
 
-### Frontend Issues
+#### **Frontend (.env)**
 ```bash
-# Clear cache and reinstall
+REACT_APP_API_URL=http://localhost:8080
+REACT_APP_AI_SERVICE_URL=http://localhost:5000
+REACT_APP_BLOCKDAG_ENABLED=true
+```
+
+---
+
+## **🧪 Testing**
+
+### **Run All Tests**
+```bash
+# Backend tests
+cd backend && go test ./...
+
+# AI service tests
+cd ai-service && python -m pytest
+
+# Frontend tests
+cd frontend && npm test
+
+# Smart contract tests
+cd blockchain && npm test
+```
+
+### **Test AI Integration**
+```bash
+# Test with malicious transaction
+curl -X POST http://localhost:5000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hash": "0xmalicious1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "from": "0xattacker1234567890abcdef1234567890abcdef12",
+    "to": "0xvictim1234567890abcdef1234567890abcdef12",
+    "value": "100.0",
+    "gasLimit": "500000",
+    "data": "0x608060405234801561001057600080fd5b50"
+  }'
+```
+
+---
+
+## **🚀 Akash Deployment**
+
+### **Quick Deploy**
+```bash
+# Build and push images
+./build-and-push-images.sh
+
+# Deploy to Akash
+./deploy-to-akash.sh
+```
+
+### **Manual Deploy**
+```bash
+# Install Akash CLI
+curl -s https://raw.githubusercontent.com/ovrclk/akash/master/install.sh | sh
+
+# Create wallet
+akash keys add defi-guard-wallet
+
+# Get AKT tokens from faucet
+# https://faucet.akash.network/
+
+# Deploy
+akash tx deployment create demo-sdl.yaml --from defi-guard-wallet
+```
+
+---
+
+## **📊 Expected Results**
+
+### **AI Analysis Response**
+```json
+{
+  "success": true,
+  "riskScore": 85,
+  "threatType": "Flash Loan Attack",
+  "confidence": 0.92,
+  "reasoning": "High gas limit with complex call data suggests flash loan attack pattern",
+  "indicators": ["high-gas-limit", "complex-call-data", "flash-loan-pattern"],
+  "provider": "grok-akash",
+  "processTime": 156,
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### **Backend API Response**
+```json
+{
+  "success": true,
+  "riskScore": 85,
+  "threatType": "Flash Loan Attack",
+  "confidence": 0.92,
+  "reasoning": "AI analysis detected flash loan attack pattern",
+  "indicators": ["high-gas-limit", "complex-call-data"],
+  "provider": "grok-akash",
+  "processTime": 156,
+  "isBlocked": true,
+  "timestamp": 1705312200
+}
+```
+
+---
+
+## **🔍 Troubleshooting**
+
+### **Common Issues**
+
+#### **Port Already in Use**
+```bash
+# Kill processes on ports
+lsof -ti:5000 | xargs kill -9
+lsof -ti:8080 | xargs kill -9
+lsof -ti:5173 | xargs kill -9
+```
+
+#### **Python Dependencies**
+```bash
+cd ai-service
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### **Node Dependencies**
+```bash
 cd frontend
 rm -rf node_modules package-lock.json
 npm install
-npm run dev
 ```
 
----
-
-## 🌐 API Endpoints
-
-Once running, you can test these endpoints:
-
-- **Health Check**: http://localhost:8080/health
-- **AI Status**: http://localhost:8080/api/ai/status
-- **Risk Analysis**: POST http://localhost:8080/api/risk-score
-- **System Stats**: http://localhost:8080/api/stats
-
----
-
-## 🎮 Demo Usage
-
-1. **Open Dashboard**: Go to http://localhost:5173
-2. **View Live Stats**: See real-time transaction screening
-3. **Check Threat Feed**: View recently blocked attacks
-4. **Run Demo**: Click "Live Demo" to simulate exploit attempts
-5. **Monitor System**: Check AI and blockchain status
-
----
-
-## 🚀 Production Deployment
-
-For production deployment with real AI and blockchain:
-
-1. **Configure Environment**:
-   - Add real Grok/Gemini API keys
-   - Set up BlockDAG network connection
-   - Configure Akash deployment
-
-2. **Deploy to Akash**:
+#### **Go Dependencies**
 ```bash
-akash tx deployment create deploy.yaml --from wallet
+cd backend
+go mod tidy
+go mod download
 ```
 
-3. **Monitor Performance**:
-   - Check AI response times (<200ms)
-   - Monitor blockchain confirmations
-   - Track exploit detection accuracy
+### **Health Checks**
+```bash
+# Check all services
+curl http://localhost:5000/health  # AI Service
+curl http://localhost:8080/health  # Backend
+curl http://localhost:5173         # Frontend
+```
 
 ---
 
-## 📞 Need Help?
+## **🎉 Success!**
 
-- **Check Logs**: Both frontend and backend show detailed logs
-- **Test APIs**: Use the provided curl commands
-- **Review Code**: All components are well-documented
-- **Run Tests**: Use the test scripts in each directory
+If everything is working, you should see:
 
-**Happy Hacking! 🛡️**
+1. **Frontend Dashboard** at http://localhost:5173
+2. **Real-time AI Analysis** working
+3. **Transaction Blocking** in action
+4. **Health Monitoring** showing all green
+5. **Demo Interface** allowing exploit simulation
+
+**Your DeFi Transaction Guard is now protecting the DeFi ecosystem!** 🛡️
+
+---
+
+## **📞 Support**
+
+- **Documentation**: [Full README](README.md)
+- **Issues**: [GitHub Issues](https://github.com/your-username/defi-transaction-guard/issues)
+- **Discord**: [Community Support](https://discord.gg/your-discord)
+
+**Happy coding!** 🚀

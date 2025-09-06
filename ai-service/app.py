@@ -55,7 +55,7 @@ def initialize_ai_clients():
         except Exception as e:
             logger.error(f"❌ Gemini initialization failed: {e}")
     
-    # Initialize Redis cache
+    # Initialize Redis cache with connection pooling
     redis_host = os.getenv('REDIS_HOST', 'localhost')
     redis_port = int(os.getenv('REDIS_PORT', 6379))
     try:
@@ -63,21 +63,38 @@ def initialize_ai_clients():
             host=redis_host, 
             port=redis_port, 
             decode_responses=True,
-            socket_timeout=5
+            socket_timeout=5,
+            socket_connect_timeout=5,
+            retry_on_timeout=True,
+            health_check_interval=30,
+            max_connections=20,
+            connection_pool_class=redis.ConnectionPool
         )
         redis_client.ping()
-        logger.info("✅ Redis cache connected")
+        logger.info("✅ Redis cache connected with connection pooling")
     except Exception as e:
         logger.warning(f"⚠️ Redis cache not available: {e}")
         redis_client = None
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint for Akash Network"""
+    """Comprehensive health check endpoint for Akash Network"""
     gpu_available = check_gpu_availability()
+    cache_stats = get_cache_stats()
+    
+    # Check AI provider availability
+    grok_status = "available" if grok_client is not None else "unavailable"
+    gemini_status = "available" if gemini_model is not None else "unavailable"
+    
+    # Overall health status
+    overall_status = "healthy"
+    if not grok_client and not gemini_model:
+        overall_status = "degraded"  # Only heuristic available
+    elif not redis_client:
+        overall_status = "degraded"  # No caching
     
     return jsonify({
-        "status": "healthy",
+        "status": overall_status,
         "timestamp": datetime.utcnow().isoformat(),
         "service": "DeFi AI Guard",
         "version": "2.0.0",
@@ -89,8 +106,29 @@ def health_check():
             "gpu_available": gpu_available,
             "models": ["grok-mixtral", "gemini-pro", "heuristic-fallback"]
         },
-        "uptime": get_uptime(),
-        "memory_usage": get_memory_usage()
+        "providers": {
+            "grok": {
+                "status": grok_status,
+                "model": "mixtral-8x7b-32768",
+                "latency": "~150ms"
+            },
+            "gemini": {
+                "status": gemini_status,
+                "model": "gemini-pro",
+                "latency": "~120ms"
+            },
+            "heuristic": {
+                "status": "available",
+                "model": "rule-engine",
+                "latency": "<50ms"
+            }
+        },
+        "cache": cache_stats,
+        "system": {
+            "uptime": get_uptime(),
+            "memory_usage": get_memory_usage(),
+            "gpu_available": gpu_available
+        }
     })
 
 @app.route('/analyze', methods=['POST'])
@@ -431,28 +469,75 @@ def generate_cache_key(tx_data: Dict[str, Any]) -> str:
     return f"tx_analysis:{hashlib.md5(key_data.encode()).hexdigest()}"
 
 def get_from_cache(cache_key: str) -> Optional[Dict[str, Any]]:
-    """Get result from cache"""
+    """Get result from cache with error handling"""
     if not redis_client:
         return None
     
     try:
         cached = redis_client.get(cache_key)
         if cached:
+            logger.info(f"Cache hit for key: {cache_key}")
             return json.loads(cached)
+    except redis.ConnectionError as e:
+        logger.warning(f"Redis connection error: {e}")
+    except redis.TimeoutError as e:
+        logger.warning(f"Redis timeout error: {e}")
     except Exception as e:
         logger.warning(f"Cache read failed: {e}")
     
     return None
 
-def cache_result(cache_key: str, result: Dict[str, Any]) -> None:
-    """Cache analysis result"""
+def cache_result(cache_key: str, result: Dict[str, Any], ttl: int = 300) -> None:
+    """Cache analysis result with error handling"""
     if not redis_client:
         return
     
     try:
-        redis_client.setex(cache_key, 300, json.dumps(result))  # 5 min cache
+        redis_client.setex(cache_key, ttl, json.dumps(result))
+        logger.info(f"Cached result for key: {cache_key} (TTL: {ttl}s)")
+    except redis.ConnectionError as e:
+        logger.warning(f"Redis connection error: {e}")
+    except redis.TimeoutError as e:
+        logger.warning(f"Redis timeout error: {e}")
     except Exception as e:
         logger.warning(f"Cache write failed: {e}")
+
+def clear_cache_pattern(pattern: str):
+    """Clear cache entries matching pattern"""
+    if redis_client:
+        try:
+            keys = redis_client.keys(pattern)
+            if keys:
+                redis_client.delete(*keys)
+                logger.info(f"Cleared {len(keys)} cache entries matching pattern: {pattern}")
+        except Exception as e:
+            logger.warning(f"Cache clear failed: {e}")
+
+def get_cache_stats() -> Dict[str, Any]:
+    """Get Redis cache statistics"""
+    if redis_client:
+        try:
+            info = redis_client.info()
+            return {
+                "connected": True,
+                "used_memory": info.get("used_memory_human", "N/A"),
+                "connected_clients": info.get("connected_clients", 0),
+                "total_commands_processed": info.get("total_commands_processed", 0),
+                "keyspace_hits": info.get("keyspace_hits", 0),
+                "keyspace_misses": info.get("keyspace_misses", 0),
+                "hit_rate": calculate_hit_rate(info)
+            }
+        except Exception as e:
+            logger.warning(f"Cache stats failed: {e}")
+    
+    return {"connected": False, "error": "Redis not available"}
+
+def calculate_hit_rate(info: Dict[str, Any]) -> float:
+    """Calculate cache hit rate"""
+    hits = info.get("keyspace_hits", 0)
+    misses = info.get("keyspace_misses", 0)
+    total = hits + misses
+    return (hits / total * 100) if total > 0 else 0.0
 
 def check_gpu_availability() -> bool:
     """Check if GPU is available"""
@@ -539,8 +624,8 @@ if __name__ == '__main__':
         debug=debug,
         threaded=True
     )
-# GoFr
- Backend Compatible Endpoints
+
+# GoFr Backend Compatible Endpoints
 @app.route('/api/ai/status', methods=['GET'])
 def ai_status_gofr():
     """GoFr backend compatible AI status endpoint"""

@@ -5,8 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"math"
+	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -57,7 +62,7 @@ type GeminiProvider struct {
 // NewGrokProvider creates a new Grok AI provider
 func NewGrokProvider() *GrokProvider {
 	return &GrokProvider{
-		APIKey:    os.Getenv("GROK_API"),
+		APIKey:    os.Getenv("GROK_API_KEY"),
 		BackupKey: os.Getenv("GROK_API_2"),
 		BaseURL:   "https://api.groq.com/openai/v1/chat/completions",
 		HTTPClient: &http.Client{
@@ -69,7 +74,7 @@ func NewGrokProvider() *GrokProvider {
 // NewGeminiProvider creates a new Gemini AI provider
 func NewGeminiProvider() *GeminiProvider {
 	return &GeminiProvider{
-		APIKey:    os.Getenv("GEMINI_API"),
+		APIKey:    os.Getenv("GEMINI_API_KEY"),
 		BackupKey: os.Getenv("GEMINI_API_2"),
 		BaseURL:   "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
 		HTTPClient: &http.Client{
@@ -82,13 +87,18 @@ func NewGeminiProvider() *GeminiProvider {
 func (g *GrokProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
 	startTime := time.Now()
 	
+	// Validate input data
+	if err := validateTransactionData(txData); err != nil {
+		return nil, fmt.Errorf("invalid transaction data: %w", err)
+	}
+	
 	prompt := g.buildAnalysisPrompt(txData)
 	
-	// Try primary API key first
-	result, err := g.callGrokAPI(g.APIKey, prompt)
+	// Try primary API key first with retry logic
+	result, err := g.callGrokAPIWithRetry(g.APIKey, prompt)
 	if err != nil && g.BackupKey != "" {
-		// Fallback to backup key
-		result, err = g.callGrokAPI(g.BackupKey, prompt)
+		// Fallback to backup key with retry logic
+		result, err = g.callGrokAPIWithRetry(g.BackupKey, prompt)
 	}
 	
 	if err != nil {
@@ -105,13 +115,18 @@ func (g *GrokProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisRe
 func (g *GeminiProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
 	startTime := time.Now()
 	
+	// Validate input data
+	if err := validateTransactionData(txData); err != nil {
+		return nil, fmt.Errorf("invalid transaction data: %w", err)
+	}
+	
 	prompt := g.buildAnalysisPrompt(txData)
 	
-	// Try primary API key first
-	result, err := g.callGeminiAPI(g.APIKey, prompt)
+	// Try primary API key first with retry logic
+	result, err := g.callGeminiAPIWithRetry(g.APIKey, prompt)
 	if err != nil && g.BackupKey != "" {
-		// Fallback to backup key
-		result, err = g.callGeminiAPI(g.BackupKey, prompt)
+		// Fallback to backup key with retry logic
+		result, err = g.callGeminiAPIWithRetry(g.BackupKey, prompt)
 	}
 	
 	if err != nil {
@@ -354,4 +369,141 @@ func (g *GeminiProvider) callGeminiAPI(apiKey, prompt string) (*AIAnalysisResult
 	}
 
 	return &result, nil
+}
+
+// validateTransactionData validates transaction input data
+func validateTransactionData(txData TransactionData) error {
+	if txData.Hash == "" {
+		return fmt.Errorf("transaction hash is required")
+	}
+	
+	if txData.From == "" {
+		return fmt.Errorf("from address is required")
+	}
+	
+	if txData.To == "" {
+		return fmt.Errorf("to address is required")
+	}
+	
+	// Validate Ethereum address format
+	if !isValidAddress(txData.From) {
+		return fmt.Errorf("invalid from address format")
+	}
+	
+	if !isValidAddress(txData.To) {
+		return fmt.Errorf("invalid to address format")
+	}
+	
+	// Validate hash format (should be 66 characters starting with 0x)
+	if !isValidHash(txData.Hash) {
+		return fmt.Errorf("invalid transaction hash format")
+	}
+	
+	return nil
+}
+
+// isValidAddress validates Ethereum address format
+func isValidAddress(address string) bool {
+	matched, _ := regexp.MatchString(`^0x[a-fA-F0-9]{40}$`, address)
+	return matched
+}
+
+// isValidHash validates transaction hash format
+func isValidHash(hash string) bool {
+	matched, _ := regexp.MatchString(`^0x[a-fA-F0-9]{64}$`, hash)
+	return matched
+}
+
+// callGrokAPIWithRetry implements retry logic for Grok API calls
+func (g *GrokProvider) callGrokAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {
+	maxRetries := 3
+	baseDelay := 1 * time.Second
+	
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		result, err := g.callGrokAPI(apiKey, prompt)
+		if err == nil {
+			return result, nil
+		}
+		
+		// Check if error is retryable
+		if !isRetryableError(err) {
+			return nil, err
+		}
+		
+		if attempt < maxRetries-1 {
+			// Exponential backoff with jitter
+			delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
+			jitter := time.Duration(float64(delay) * 0.1 * (math.Floor(rand.Float64()*21) - 10)) // ±10% jitter
+			delay += jitter
+			
+			log.Printf("Retrying Grok API call in %v (attempt %d/%d)", delay, attempt+1, maxRetries)
+			time.Sleep(delay)
+		}
+	}
+	
+	return nil, fmt.Errorf("Grok API failed after %d attempts", maxRetries)
+}
+
+// callGeminiAPIWithRetry implements retry logic for Gemini API calls
+func (g *GeminiProvider) callGeminiAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {
+	maxRetries := 3
+	baseDelay := 1 * time.Second
+	
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		result, err := g.callGeminiAPI(apiKey, prompt)
+		if err == nil {
+			return result, nil
+		}
+		
+		// Check if error is retryable
+		if !isRetryableError(err) {
+			return nil, err
+		}
+		
+		if attempt < maxRetries-1 {
+			// Exponential backoff with jitter
+			delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
+			jitter := time.Duration(float64(delay) * 0.1 * (math.Floor(rand.Float64()*21) - 10)) // ±10% jitter
+			delay += jitter
+			
+			log.Printf("Retrying Gemini API call in %v (attempt %d/%d)", delay, attempt+1, maxRetries)
+			time.Sleep(delay)
+		}
+	}
+	
+	return nil, fmt.Errorf("Gemini API failed after %d attempts", maxRetries)
+}
+
+// isRetryableError determines if an error is retryable
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errStr := strings.ToLower(err.Error())
+	
+	// Network errors are retryable
+	if strings.Contains(errStr, "timeout") ||
+		strings.Contains(errStr, "connection") ||
+		strings.Contains(errStr, "network") ||
+		strings.Contains(errStr, "temporary") {
+		return true
+	}
+	
+	// Rate limit errors are retryable
+	if strings.Contains(errStr, "rate limit") ||
+		strings.Contains(errStr, "too many requests") ||
+		strings.Contains(errStr, "429") {
+		return true
+	}
+	
+	// Server errors (5xx) are retryable
+	if strings.Contains(errStr, "500") ||
+		strings.Contains(errStr, "502") ||
+		strings.Contains(errStr, "503") ||
+		strings.Contains(errStr, "504") {
+		return true
+	}
+	
+	return false
 }
