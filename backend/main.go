@@ -105,6 +105,7 @@ func main() {
 	// Set environment variables for GoFr configuration
 	os.Setenv("HTTP_PORT", "8080")
 	os.Setenv("METRICS_PORT", "9090")
+	os.Setenv("AI_SERVICE_URL", "http://localhost:5002")
 	
 	app := gofr.New()
 

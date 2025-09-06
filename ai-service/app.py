@@ -20,6 +20,9 @@ from flask_cors import CORS
 from groq import Groq
 import google.generativeai as genai
 
+# Load environment variables
+load_dotenv()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -66,9 +69,7 @@ def initialize_ai_clients():
             socket_timeout=5,
             socket_connect_timeout=5,
             retry_on_timeout=True,
-            health_check_interval=30,
-            max_connections=20,
-            connection_pool_class=redis.ConnectionPool
+            health_check_interval=30
         )
         redis_client.ping()
         logger.info("✅ Redis cache connected with connection pooling")
@@ -615,7 +616,7 @@ if __name__ == '__main__':
     logger.info(f"GPU available: {check_gpu_availability()}")
     
     # Run the Flask app
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 5002))  # Changed default to 5002
     debug = os.getenv('DEBUG', 'false').lower() == 'true'
     
     app.run(
