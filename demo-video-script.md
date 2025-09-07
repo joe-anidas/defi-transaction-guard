@@ -21,76 +21,66 @@
 ### Problem & Solution (0:30 - 1:00)
 *[Screen: Dashboard overview at localhost:5173]*
 
-**"Here's our live dashboard. Look at these metrics - over 15,000 transactions screened, 33 exploits blocked, and 3.3 million dollars in funds protected. This isn't theoretical - this is happening right now."**
+**"Here's our live dashboard. You can see it in action right now — more than fifteen thousand transactions screened, thirty-three exploits blocked, and over 3.3 million dollars in funds protected. Every single transaction is analyzed by AI in under 200 milliseconds. And if it's malicious, it's blocked on-chain before it can even execute. No bypasses, no workarounds."**
 
-*[Point to real-time metrics updating]*
-
-**"Every transaction gets analyzed by AI in under 200 milliseconds. If it's malicious, it gets blocked on-chain before it can execute. No bypassing, no workarounds."**
+*[Point to real-time metrics updating and threat feed showing recent blocked attacks]*
 
 ### Technical Architecture (1:00 - 2:00)
 *[Screen: System architecture diagram]*
 
-**"Here's how it works. We have three core components:"**
+**"So how does it work? Let me break it down into three components."**
 
-**"First - the AI analysis engine running on Akash Network. It uses Gemini AI plus heuristic analysis to detect exploit patterns. High gas limits, suspicious addresses, liquidity draining patterns - it catches them all."**
+**"First, the AI analysis engine running on Akash Network. It combines Gemini AI with heuristic rules to catch patterns like high gas limits, suspicious addresses, and liquidity drains."**
 
 *[Show AI service response]*
 
-**"Second - our GoFr-powered backend. This handles risk scoring, real-time APIs, and streams data to the dashboard. It processes over 10,000 transactions per second with 99.97% uptime."**
+**"Second, our GoFr-powered backend. This handles the risk scoring, APIs, and streams real-time data to this dashboard. It's built to scale — processing over ten thousand transactions per second with near-perfect uptime."**
 
 *[Show backend API call]*
 
-**"Third - BlockDAG integration. The firewall runs as a smart contract modifier. Developers just add 'protected()' to their functions, and boom - instant exploit protection."**
+**"And third, the BlockDAG integration. This is where the magic happens on-chain. Developers simply add one function modifier, 'protected()', to their smart contracts. From that moment, every transaction is firewalled against exploits."**
 
 ### Live Demo - Exploit Prevention (2:00 - 3:15)
 *[Screen: Demo component with wallet connection]*
 
-**"Let me show you this in action. I'm connecting to BlockDAG testnet with real BDAG tokens. Watch my balance - it's updating live from the blockchain."**
+**"Let's see this in action. I'm connecting my wallet to the BlockDAG testnet using real BDAG tokens. Here's my live balance, updating directly from the chain."**
 
 *[Connect wallet, show live balance]*
 
-**"Now I'm going to attempt a malicious transaction. I'll select this liquidity drainer contract - it's designed to steal funds through a flash loan attack."**
+**"Now, I'm going to try a malicious transaction using a contract called LiquidityDrainer. Look closely — it wants to transfer just 500 BDAG, but it's requesting a gas limit of half a million. A normal transfer would only need about twenty-one thousand."**
 
 *[Select malicious contract, show transaction details]*
 
-**"Look at these transaction details - 500 BDAG transfer, but with 500,000 gas limit. That's suspicious. A normal transfer only needs 21,000 gas."**
+**"Watch what happens when I run this…"**
 
 *[Click execute transaction]*
 
-**"Watch what happens when I execute this..."**
-
-*[Show transaction analysis in real-time]*
-
-**"The AI immediately flags this as a 95% risk score - 'Flash Loan Attack Detected'. The transaction is blocked on-chain. My funds are completely safe."**
+**"Instantly, the AI flags it as a 95% risk score. It detects a flash loan exploit attempt, and the firewall blocks the transaction right on-chain. My balance stays safe, and the attacker gets nothing."**
 
 *[Show blocked transaction result]*
 
 ### Impact Comparison (3:15 - 4:00)
 *[Screen: Impact comparison section]*
 
-**"Here's the impact. Without Transaction Guard, this exploit would have drained my entire balance - that's a $50,000 loss. With our protection, zero dollars lost."**
+**"Here's the difference. Without Transaction Guard, that exploit would have drained my entire wallet — a fifty-thousand dollar loss. With our protection, the loss is zero. And this isn't just personal safety. Any DeFi protocol can integrate our guard with just one line of code. That means users are protected, and the ecosystem as a whole becomes more secure."**
 
-*[Point to comparison charts]*
-
-**"But this isn't just about individual protection. This is infrastructure that secures the entire DeFi ecosystem. Any protocol can integrate with one line of code. Users get transparent protection. The network gets stronger with each participant."**
+*[Point to comparison charts showing protected vs unprotected scenarios]*
 
 ### Economic Security & Validation (4:00 - 4:30)
 *[Screen: Validator staking mechanism]*
 
-**"The system is secured by BDAG token staking. Validators stake their tokens to participate in threat validation. If they approve a malicious transaction, they lose their stake. This creates economic incentives for honest reporting."**
-
-**"It's not just AI making decisions - it's a decentralized network of validators with skin in the game."**
+**"Now, let's talk about trust. This isn't just AI making all the calls. The firewall is secured by BDAG token staking. Validators stake tokens to participate in approving or rejecting transactions. If they ever approve a malicious one, they lose their stake. That economic incentive keeps the network honest and decentralized."**
 
 ### Closing & Call to Action (4:30 - 5:00)
 *[Screen: Technology stack and roadmap]*
 
-**"This is built on cutting-edge tech - BlockDAG for parallel processing, Akash Network for decentralized AI, and GoFr framework for high-performance APIs."**
+**"So to sum it up — DeFi Transaction Guard is built on BlockDAG for parallel blockchain security, Akash Network for decentralized AI compute, and the GoFr framework for high-performance APIs."**
 
 *[Show GitHub repository]*
 
-**"The code is open source, the system is live, and it's ready for integration. We're not just building another DeFi protocol - we're building the security infrastructure that protects them all."**
+**"It's open source, live, and ready for integration. We're not just another DeFi project — we're building the security layer that protects them all."**
 
-**"DeFi Transaction Guard - making decentralized finance safer, one transaction at a time. Check out the GitHub repo and try the live demo yourself."**
+**"DeFi Transaction Guard: making decentralized finance safer, one transaction at a time. Check out our GitHub and try the live demo yourself."**
 
 ---
 

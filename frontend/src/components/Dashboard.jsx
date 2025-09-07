@@ -100,7 +100,7 @@ function Dashboard() {
         {/* System Status */}
         <div className="space-y-8">
           <SystemStatus />
-          <WalletConnection />
+     
         </div>
       </div>
 

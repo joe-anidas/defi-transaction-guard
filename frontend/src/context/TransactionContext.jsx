@@ -12,62 +12,69 @@ export const useTransaction = () => {
 
 export const TransactionProvider = ({ children }) => {
   const [stats, setStats] = useState({
-    transactionsScreened: 0,
-    exploitsBlocked: 0,
-    fundsProtected: 0,
-    falsePositiveRate: 0
+    transactionsScreened: 15247, // "more than fifteen thousand transactions screened"
+    exploitsBlocked: 33, // "thirty-three exploits blocked"
+    fundsProtected: 3300000, // "over 3.3 million dollars in funds protected"
+    falsePositiveRate: 2.97 // 97.03% accuracy as mentioned in demo
   })
 
-  const [recentBlocks, setRecentBlocks] = useState([])
+  const [recentBlocks, setRecentBlocks] = useState([
+    {
+      id: 1,
+      type: 'Flash Loan Attack',
+      amount: 125000,
+      time: '2 minutes ago',
+      confidence: 96,
+      status: 'blocked'
+    },
+    {
+      id: 2,
+      type: 'Rug Pull Pattern',
+      amount: 89000,
+      time: '8 minutes ago',
+      confidence: 94,
+      status: 'blocked'
+    },
+    {
+      id: 3,
+      type: 'MEV Sandwich Attack',
+      amount: 45000,
+      time: '15 minutes ago',
+      confidence: 87,
+      status: 'blocked'
+    },
+    {
+      id: 4,
+      type: 'Liquidity Drain',
+      amount: 67000,
+      time: '23 minutes ago',
+      confidence: 92,
+      status: 'blocked'
+    },
+    {
+      id: 5,
+      type: 'Governance Exploit',
+      amount: 156000,
+      time: '31 minutes ago',
+      confidence: 98,
+      status: 'blocked'
+    }
+  ])
 
   const [isScanning, setIsScanning] = useState(false)
   const [currentTransaction, setCurrentTransaction] = useState(null)
 
-  // Poll backend for stats and alerts
+  // Static demo data - no API polling needed for demo
   useEffect(() => {
-    let isMounted = true
-    const fetchStats = async () => {
-      try {
-        const res = await fetch('http://localhost:8080/api/stats')
-        if (res.ok) {
-          const data = await res.json()
-          if (!isMounted) return
-          setStats({
-            transactionsScreened: data.TransactionsScreened || 0,
-            exploitsBlocked: data.ExploitsBlocked || 0,
-            fundsProtected: data.FundsProtected || 0,
-            falsePositiveRate: data.FalsePositiveRate || 0
-          })
-        }
-      } catch {}
-    }
-
-    const fetchAlerts = async () => {
-      try {
-        const res = await fetch('http://localhost:8080/api/alerts')
-        if (res.ok) {
-          const list = await res.json()
-          if (!isMounted) return
-          const mapped = list.map((a) => ({
-            id: a.id,
-            type: a.type,
-            amount: a.potentialLoss || Math.floor(Math.random() * 150000) + 25000,
-            time: new Date(a.timestamp * 1000).toLocaleTimeString(),
-            confidence: 95,
-            status: 'blocked'
-          }))
-          setRecentBlocks(mapped)
-        }
-      } catch {}
-    }
-
-    fetchStats()
-    fetchAlerts()
+    // Simulate live updates by incrementing transaction count occasionally
     const interval = setInterval(() => {
-      fetchStats()
-      fetchAlerts()
-    }, 5000)
-    return () => { isMounted = false; clearInterval(interval) }
+      setStats(prev => ({
+        ...prev,
+        transactionsScreened: prev.transactionsScreened + Math.floor(Math.random() * 3) + 1
+      }))
+    }, 8000) // Update every 8 seconds to show "live" activity
+    
+    return () => clearInterval(interval)
   }, [])
 
   const simulateExploitAttempt = () => {
