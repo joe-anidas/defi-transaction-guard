@@ -203,7 +203,9 @@ const connectWallet = async () => {
   // Contract interaction functions
   const getFirewallStats = async () => {
     try {
-      if (!contracts.transactionGuard) return null
+      if (!contracts.transactionGuard) {
+        return null;
+      }
 
       const stats = await contracts.transactionGuard.getFirewallStats()
       return {
@@ -220,7 +222,9 @@ const connectWallet = async () => {
   }
 
   const getBDAGBalance = async (address = account) => {
-    if (!provider || !address) return '0'
+    if (!provider || !address) {
+      return '0';
+    }
     try {
       const wei = await provider.getBalance(address)
       return formatEther(wei)
@@ -233,7 +237,9 @@ const connectWallet = async () => {
 
   const requestBDAGFromFaucet = async (amount = '1000') => {
     try {
-      if (!contracts.bdagToken) throw new Error('BDAG contract not available')
+      if (!contracts.bdagToken) {
+        throw new Error('BDAG contract not available');
+      }
 
       const tx = await contracts.bdagToken.faucet(account, parseEther(amount))
       await tx.wait()
@@ -245,47 +251,81 @@ const connectWallet = async () => {
     }
   }
 
-  const simulateMaliciousTransaction = async (type = 'drainLiquidity') => {
+  const simulateMaliciousTransaction = async (type = 'drainLiquidity', amount = '500', gasLimit = '500000') => {
     try {
-      if (!contracts.maliciousContract) throw new Error('Malicious contract not available')
+      if (!contracts.transactionGuard || !contracts.maliciousContract) {
+        throw new Error('Required contract not available');
+      }
 
-      let tx
+      let target = contracts.maliciousContract.address;
+      let data;
+      let parsedAmount = parseEther(amount.toString());
+      let parsedGasLimit = gasLimit ? parseInt(gasLimit) : 500000;
+      
       switch (type) {
         case 'drainLiquidity':
-          tx = await contracts.maliciousContract.drainLiquidity(account, parseEther('500'))
-          break
+          data = contracts.maliciousContract.interface.encodeFunctionData('drainLiquidity', [account, parsedAmount]);
+          break;
         case 'rugPull':
-          tx = await contracts.maliciousContract.rugPull()
-          break
+          data = contracts.maliciousContract.interface.encodeFunctionData('rugPull');
+          break;
         case 'sandwichAttack':
-          tx = await contracts.maliciousContract.sandwichAttack(account, parseEther('100'))
-          break
+          data = contracts.maliciousContract.interface.encodeFunctionData('sandwichAttack', [account, parsedAmount]);
+          break;
+        case 'transfer':
+          // For good transactions, do a simple BDAG token transfer or faucet request
+          if (!contracts.bdagToken) {
+            throw new Error('BDAG token contract not available');
+          }
+          
+          // Check if we have enough balance, if not, request from faucet first
+          try {
+            const balance = await contracts.bdagToken.balanceOf(account);
+            const requiredAmount = parseEther(amount.toString());
+            
+            if (balance.lt(requiredAmount)) {
+              // Request tokens from faucet first
+              console.log('Insufficient balance, requesting from faucet...');
+              return await contracts.bdagToken.faucet(account, requiredAmount, { gasLimit: parsedGasLimit });
+            } else {
+              // Transfer to a different address (using contract address as recipient for demo)
+              const recipientAddress = contracts.transactionGuard.address;
+              return await contracts.bdagToken.transfer(recipientAddress, parsedAmount, { gasLimit: parsedGasLimit });
+            }
+          } catch (balanceError) {
+            // Fallback to faucet request if balance check fails
+            console.log('Balance check failed, requesting from faucet...', balanceError);
+            return await contracts.bdagToken.faucet(account, parsedAmount, { gasLimit: parsedGasLimit });
+          }
         default:
-          throw new Error('Unknown attack type')
+          throw new Error('Unknown attack type');
       }
+
+      // Call TransactionGuard's executeProtected with gas limit for malicious transactions
+      let tx = await contracts.transactionGuard.executeProtected(target, data, { gasLimit: parsedGasLimit });
 
       // Re-send with low-fee overrides if needed
       return await sendWithLowFee(async (overrides) => {
-        const populated = await tx.wait(0).then(() => tx).catch(() => tx)
-        // If tx already sent, just return the hash
+        const populated = await tx.wait(0).then(() => tx).catch(() => tx);
         if (populated && populated.hash) {
           return {
             wait: async () => ({ transactionHash: populated.hash })
-          }
+          };
         }
-        // Fallback: call a no-op to fit helper signature
-        return { wait: async () => ({ transactionHash: tx.hash }) }
-      })
+        return { wait: async () => ({ transactionHash: tx.hash }) };
+      });
     } catch (error) {
-      // This should fail due to Transaction Guard protection
-      console.log('Transaction blocked by firewall:', error.message)
-      return { blocked: true, reason: error.message }
+      // This should fail due to Transaction Guard protection for malicious transactions
+      console.log('Transaction result:', error.message);
+      throw error;
     }
   }
 
   const submitRiskAssessment = async (txHash, riskScore, threatType) => {
     try {
-      if (!contracts.transactionGuard) throw new Error('Transaction Guard not available')
+      if (!contracts.transactionGuard) {
+        throw new Error('Transaction Guard not available');
+      }
 
       const tx = await contracts.transactionGuard.submitRiskAssessment(
         txHash,
@@ -329,7 +369,9 @@ const connectWallet = async () => {
 
   // Helper for submitting transactions with lower gas on BDAG or Sepolia
   const sendWithLowFee = async (txPromiseFactory) => {
-    if (!signer) throw new Error('No signer available')
+    if (!signer) {
+      throw new Error('No signer available');
+    }
     const net = await signer.provider.getNetwork()
     // Try to set modest gas settings
     const overrides = {}
@@ -362,7 +404,9 @@ const connectWallet = async () => {
 
   // Listen for contract events
   const listenForEvents = (callback) => {
-    if (!contracts.transactionGuard) return
+    if (!contracts.transactionGuard) {
+      return;
+    }
 
     contracts.transactionGuard.on('TransactionBlocked', (txHash, riskScore, threatType, event) => {
       callback({
@@ -464,6 +508,52 @@ const connectWallet = async () => {
     return networks[chainId]
   }
 
+  // Dedicated function for good transactions that opens MetaMask
+  const executeGoodTransaction = async (amount = '500', gasLimit = '500000') => {
+    try {
+      if (!signer) {
+        throw new Error('Wallet not connected');
+      }
+
+      if (!contracts.bdagToken) {
+        throw new Error('BDAG token contract not available');
+      }
+
+      const parsedAmount = parseEther(amount.toString());
+      const parsedGasLimit = gasLimit ? parseInt(gasLimit) : 500000;
+
+      console.log('Executing good transaction:', { amount, gasLimit: parsedGasLimit });
+
+      // Check balance first
+      const balance = await contracts.bdagToken.balanceOf(account);
+      console.log('Current balance:', formatEther(balance), 'BDAG');
+      console.log('Required amount:', amount, 'BDAG');
+
+      if (balance.lt(parsedAmount)) {
+        // Request tokens from faucet first
+        console.log('Insufficient balance, requesting from faucet...');
+        const faucetTx = await contracts.bdagToken.faucet(account, parsedAmount, { 
+          gasLimit: parsedGasLimit 
+        });
+        console.log('Faucet transaction submitted:', faucetTx.hash);
+        return faucetTx;
+      } else {
+        // Transfer to a different address (using a demo recipient)
+        const recipientAddress = contracts.transactionGuard.address;
+        console.log('Transferring to:', recipientAddress);
+        
+        const transferTx = await contracts.bdagToken.transfer(recipientAddress, parsedAmount, { 
+          gasLimit: parsedGasLimit 
+        });
+        console.log('Transfer transaction submitted:', transferTx.hash);
+        return transferTx;
+      }
+    } catch (error) {
+      console.error('Good transaction failed:', error);
+      throw error;
+    }
+  }
+
   return {
     // State
     provider,
@@ -488,6 +578,7 @@ const connectWallet = async () => {
     getBDAGBalance,
     requestBDAGFromFaucet,
     simulateMaliciousTransaction,
+    executeGoodTransaction,
     submitRiskAssessment,
     stakeAsValidator,
     listenForEvents,

@@ -41,8 +41,8 @@
       ]
     },
     "/Users/joe/Documents/GitHub/defi-transaction-guard/blockchain/contracts/TransactionGuard.sol": {
-      "lastModificationDate": 1757155981588,
-      "contentHash": "045057781e7c05dc5ba815e9d0682a9e",
+      "lastModificationDate": 1757275467726,
+      "contentHash": "1ddcd23e12a96430d442a24e9d0dcd47",
       "sourceName": "contracts/TransactionGuard.sol",
       "solcConfig": {
         "version": "0.8.19",

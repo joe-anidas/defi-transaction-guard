@@ -3,15 +3,27 @@ import { useTransaction } from '../context/TransactionContext'
 function TransactionAnalysis() {
   const { currentTransaction, isScanning } = useTransaction()
 
-  const analysisSteps = [
-    { id: 1, name: 'Gas Limit Analysis', status: 'completed', result: 'SUSPICIOUS' },
-    { id: 2, name: 'Recipient Risk Check', status: 'completed', result: 'HIGH RISK' },
-    { id: 3, name: 'Pattern Matching', status: 'completed', result: 'EXPLOIT DETECTED' },
-    { id: 4, name: 'Liquidity Impact', status: 'completed', result: 'CRITICAL' }
+  const getMaliciousAnalysisSteps = () => [
+    { id: 1, name: 'Gemini AI Analysis', status: 'completed', result: 'MALICIOUS DETECTED' },
+    { id: 2, name: 'Pattern Recognition', status: 'completed', result: 'HIGH RISK PATTERNS' },
+    { id: 3, name: 'Risk Assessment', status: 'completed', result: 'CRITICAL THREAT' },
+    { id: 4, name: 'Final Verdict', status: 'completed', result: 'BLOCK TRANSACTION' }
   ]
 
+  const getGoodAnalysisSteps = () => [
+    { id: 1, name: 'Gemini AI Analysis', status: 'completed', result: 'SAFE VERIFIED' },
+    { id: 2, name: 'Pattern Recognition', status: 'completed', result: 'NORMAL PATTERNS' },
+    { id: 3, name: 'Risk Assessment', status: 'completed', result: 'LOW RISK' },
+    { id: 4, name: 'Final Verdict', status: 'completed', result: 'APPROVE TRANSACTION' }
+  ]
+
+  const analysisSteps = currentTransaction?.analysisSteps || 
+    (currentTransaction?.isMalicious === false ? getGoodAnalysisSteps() : getMaliciousAnalysisSteps())
+
   const getStepStatus = (step) => {
-    if (!currentTransaction) return 'pending'
+    if (!currentTransaction) {
+      return 'pending'
+    }
     if (currentTransaction.status === 'analyzing') {
       return step.id <= 2 ? 'completed' : 'pending'
     }
@@ -22,19 +34,43 @@ function TransactionAnalysis() {
   }
 
   const getStepIcon = (status, result) => {
-    if (status === 'pending') return '⏳'
+    if (status === 'pending') {
+      return '⏳'
+    }
     if (result === 'SUSPICIOUS' || result === 'HIGH RISK' || result === 'EXPLOIT DETECTED' || result === 'CRITICAL') {
       return '🚨'
+    }
+    if (result === 'NORMAL' || result === 'SAFE' || result === 'NO THREATS' || result === 'APPROVED') {
+      return '✅'
     }
     return '✅'
   }
 
   const getResultColor = (result) => {
     switch (result) {
+      case 'CRITICAL THREAT':
+      case 'MALICIOUS DETECTED':
+      case 'BLOCK TRANSACTION':
+      case 'HIGH RISK PATTERNS':
+        return 'text-red-400'
       case 'CRITICAL': return 'text-red-400'
       case 'EXPLOIT DETECTED': return 'text-red-400'
       case 'HIGH RISK': return 'text-orange-400'
       case 'SUSPICIOUS': return 'text-yellow-400'
+      case 'SAFE VERIFIED':
+      case 'NORMAL PATTERNS':
+      case 'APPROVE TRANSACTION':
+      case 'LOW RISK':
+        return 'text-green-400'
+      case 'NORMAL': return 'text-green-400'
+      case 'SAFE': return 'text-green-400'
+      case 'NO THREATS': return 'text-green-400'
+      case 'APPROVED': return 'text-green-400'
+      case 'ANALYZING':
+      case 'SCANNING':
+      case 'EVALUATING':
+      case 'DETERMINING':
+        return 'text-blue-400'
       default: return 'text-green-400'
     }
   }
@@ -120,6 +156,49 @@ function TransactionAnalysis() {
             </div>
           )}
 
+          {/* Transaction Status Updates */}
+          {currentTransaction && currentTransaction.status === 'processing' && (
+            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+              <div className="text-sm text-blue-400 mb-1">🔄 Processing Transaction</div>
+              <div className="text-sm text-blue-300">
+                {currentTransaction.reason}
+              </div>
+            </div>
+          )}
+
+          {currentTransaction && currentTransaction.status === 'pending' && (
+            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+              <div className="text-sm text-yellow-400 mb-1">⏳ Transaction Pending</div>
+              <div className="font-mono text-sm text-white">
+                Hash: {currentTransaction.hash}
+              </div>
+              <div className="text-sm text-yellow-300 mt-2">
+                {currentTransaction.reason}
+              </div>
+            </div>
+          )}
+
+          {currentTransaction && currentTransaction.status === 'completed' && (
+            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+              <div className="text-sm text-green-400 mb-1">✅ Transaction Completed</div>
+              <div className="font-mono text-sm text-white">
+                Hash: {currentTransaction.hash}
+              </div>
+              <div className="text-sm text-green-300 mt-2">
+                {currentTransaction.reason}
+              </div>
+            </div>
+          )}
+
+          {currentTransaction && currentTransaction.status === 'failed' && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+              <div className="text-sm text-red-400 mb-1">❌ Transaction Failed</div>
+              <div className="text-sm text-red-300">
+                {currentTransaction.reason}
+              </div>
+            </div>
+          )}
+
           {/* Final Decision */}
           {currentTransaction?.status === 'blocked' && (
             <div className="bg-red-900/30 border-2 border-red-500 rounded-lg p-6 text-center">
@@ -132,6 +211,21 @@ function TransactionAnalysis() {
               </div>
               <div className="mt-4 text-xs text-gray-400">
                 Response Time: 2.8 seconds
+              </div>
+            </div>
+          )}
+
+          {currentTransaction?.status === 'approved' && currentTransaction?.status !== 'completed' && (
+            <div className="bg-green-900/30 border-2 border-green-500 rounded-lg p-6 text-center">
+              <div className="text-4xl mb-3">✅</div>
+              <div className="text-xl font-bold text-green-400 mb-2">
+                TRANSACTION APPROVED
+              </div>
+              <div className="text-sm text-green-300">
+                Safe transaction verified by AI analysis
+              </div>
+              <div className="mt-4 text-xs text-gray-400">
+                Analysis Time: 2.8 seconds
               </div>
             </div>
           )}
