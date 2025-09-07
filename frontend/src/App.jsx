@@ -1,11 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
 import Dashboard from './components/Dashboard'
+import Home from './components/Home'
 import Demo from './components/Demo'
 import TechProof from './components/TechProof'
 import Navbar from './components/Navbar'
-import NetworkStatus from './components/NetworkStatus'
-import SetupStatus from './components/SetupStatus'
 import TroubleshootingGuide from './components/TroubleshootingGuide'
 import { TransactionProvider } from './context/TransactionContext'
 
@@ -51,12 +50,10 @@ function App() {
 
           <div className="relative z-10">
             <Navbar />
-            <div className="container mx-auto px-4 py-4">
-              <SetupStatus />
-              <NetworkStatus />
-            </div>
+        
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/demo" element={<Demo />} />
               <Route path="/tech-proof" element={<TechProof />} />
             </Routes>

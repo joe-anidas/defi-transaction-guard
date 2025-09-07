@@ -21,7 +21,7 @@ echo ""
 
 # Check AI integration
 echo -e "${BLUE}🤖 Step 2: AI Integration Status${NC}"
-echo "Checking Grok and Gemini API availability..."
+echo "Checking Groq and Gemini API availability..."
 curl -s http://localhost:8080/api/ai/status | jq '.providers' 2>/dev/null || echo "AI services checked"
 echo ""
 
@@ -95,7 +95,7 @@ echo ""
 
 # Show AI provider comparison
 echo -e "${BLUE}🔬 Step 8: AI Provider Analysis${NC}"
-echo "Comparing Grok vs Gemini performance..."
+echo "Comparing Groq vs Gemini performance..."
 curl -s http://localhost:8080/api/ai/providers | jq '.providers[] | {name, available, latency}' 2>/dev/null || echo "Provider info shown"
 echo ""
 
@@ -114,7 +114,7 @@ echo -e "${GREEN}🎉 Demo Complete!${NC}"
 echo ""
 echo -e "${YELLOW}Key Achievements Demonstrated:${NC}"
 echo "✅ GoFr Framework - High-performance API backend"
-echo "✅ AI Integration - Grok + Gemini real-time analysis"
+echo "✅ AI Integration - Groq + Gemini real-time analysis"
 echo "✅ Real-time Protection - Sub-200ms transaction screening"
 echo "✅ Threat Intelligence - Advanced pattern recognition"
 echo "✅ Live Monitoring - WebSocket alerts and statistics"

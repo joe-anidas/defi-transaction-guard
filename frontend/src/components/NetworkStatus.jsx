@@ -20,7 +20,7 @@ const NetworkStatus = () => {
       80001: { name: 'Polygon Mumbai', optimal: false },
       31337: { name: 'Localhost', optimal: true },
       1337: { name: 'Localhost Alt', optimal: true },
-      12345: { name: 'BlockDAG Testnet', optimal: true }
+      19648: { name: 'BlockDAG Testnet', optimal: true }
     }
 
     const network = networks[chainId] || { name: `Network ${chainId}`, optimal: false }

@@ -1,11 +1,11 @@
 # ⚡ Backend - GoFr API Server with AI Integration
 
-This folder contains the GoFr-powered backend API server for the DeFi Transaction Guard system, featuring real AI integration with Grok and Gemini APIs.
+This folder contains the GoFr-powered backend API server for the DeFi Transaction Guard system, featuring real AI integration with Groq and Gemini APIs.
 
 ## 🌟 Features
 
 ### 🤖 AI-Powered Risk Analysis
-- **Grok API Integration** - Advanced transaction pattern analysis
+- **Groq API Integration** - Advanced transaction pattern analysis
 - **Gemini API Integration** - Multi-model threat detection
 - **Intelligent Fallback** - Heuristic analysis when AI unavailable
 - **Real-time Processing** - Sub-200ms AI-powered risk scoring
@@ -52,7 +52,7 @@ curl http://localhost:8080/health
 
 ### AI-Specific Endpoints
 - `GET /api/ai/status` - Check AI service availability
-- `POST /api/ai/analyze` - Direct AI analysis (Grok/Gemini)
+- `POST /api/ai/analyze` - Direct AI analysis (Groq/Gemini)
 - `GET /api/ai/providers` - List available AI providers
 
 ### Demo Endpoints
@@ -67,8 +67,8 @@ PORT=8080
 HOST=localhost
 
 # AI API Keys (required for full functionality)
-GROK_API=gsk_your_grok_api_key_here
-GROK_API_2=gsk_backup_grok_key_here
+GROQ_API=gsk_your_groq_api_key_here
+GROQ_API_2=gsk_backup_groq_key_here
 GEMINI_API=your_gemini_api_key_here
 GEMINI_API_2=backup_gemini_key_here
 
@@ -88,8 +88,8 @@ CORS_ORIGINS=http://localhost:5173
 ## 🤖 AI Integration Workflow
 
 ### Multi-Provider AI Analysis
-1. **Primary Analysis** - Grok API for advanced pattern recognition
-2. **Fallback Analysis** - Gemini API if Grok unavailable
+1. **Primary Analysis** - Groq API for advanced pattern recognition
+2. **Fallback Analysis** - Gemini API if Groq unavailable
 3. **Heuristic Backup** - Rule-based analysis if both AI services fail
 4. **Confidence Scoring** - ML model certainty assessment
 

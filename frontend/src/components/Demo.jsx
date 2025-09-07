@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useTransaction } from '../context/TransactionContext'
 import { useBlockchain } from '../hooks/useBlockchain'
 import TransactionAnalysis from './TransactionAnalysis'
+import SetupStatus from './SetupStatus'
+import EnhancedNetworkStatus from './EnhancedNetworkStatus'
 
 function Demo() {
   const { simulateExploitAttempt, resetDemo, currentTransaction, isScanning } = useTransaction()
@@ -94,8 +96,14 @@ function Demo() {
   }
 
   return (
+
+    
     <div className="max-w-6xl mx-auto px-6 py-8">
       {/* Header */}
+      <div className="container mx-auto px-4 py-4">
+              <SetupStatus />
+              <EnhancedNetworkStatus />
+            </div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
           Live Exploit Prevention Demo

@@ -24,13 +24,13 @@ type HeuristicProvider struct {
 func NewAIManager() *AIManager {
 	var providers []AIProvider
 	
-	// Initialize Grok provider
-	grok := NewGrokProvider()
-	if grok.IsAvailable() {
-		providers = append(providers, grok)
-		log.Println("✅ Grok AI provider initialized")
+	// Initialize Groq provider
+	groq := NewGroqProvider()
+	if groq.IsAvailable() {
+		providers = append(providers, groq)
+		log.Println("✅ Groq AI provider initialized")
 	} else {
-		log.Println("⚠️ Grok API key not found, skipping Grok provider")
+		log.Println("⚠️ Groq API key not found, skipping Groq provider")
 	}
 	
 	// Initialize Gemini provider
@@ -120,7 +120,7 @@ func (m *AIManager) GetProviderCapabilities() map[string]interface{} {
 		var caps []string
 		
 		switch provider.GetProviderName() {
-		case "grok":
+		case "groq":
 			model = "mixtral-8x7b-32768"
 			latency = "~150ms"
 			caps = []string{"transaction-analysis", "threat-detection", "risk-scoring", "exploit-patterns"}

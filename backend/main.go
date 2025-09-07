@@ -156,7 +156,7 @@ func main() {
 
 	log.Println("🛡️ DeFi Transaction Guard API starting on :8080")
 	log.Println("🔗 Powered by GoFr Framework")
-	log.Println("🤖 AI Integration: Grok + Gemini APIs")
+	log.Println("🤖 AI Integration: Groq + Gemini APIs")
 	log.Println("⚡ Real-time exploit detection enabled")
 	
 	app.Run()

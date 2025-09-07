@@ -43,8 +43,8 @@ type AIAnalysisResult struct {
 	ProcessTime int64   `json:"processTime"`
 }
 
-// GrokProvider implements Grok AI analysis
-type GrokProvider struct {
+// GroqProvider implements Groq AI analysis
+type GroqProvider struct {
 	APIKey     string
 	BackupKey  string
 	BaseURL    string
@@ -59,11 +59,11 @@ type GeminiProvider struct {
 	HTTPClient *http.Client
 }
 
-// NewGrokProvider creates a new Grok AI provider
-func NewGrokProvider() *GrokProvider {
-	return &GrokProvider{
-		APIKey:    os.Getenv("GROK_API_KEY"),
-		BackupKey: os.Getenv("GROK_API_2"),
+// NewGroqProvider creates a new Groq AI provider
+func NewGroqProvider() *GroqProvider {
+	return &GroqProvider{
+		APIKey:    os.Getenv("GROQ_API_KEY"),
+		BackupKey: os.Getenv("GROQ_API_2"),
 		BaseURL:   "https://api.groq.com/openai/v1/chat/completions",
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -83,8 +83,8 @@ func NewGeminiProvider() *GeminiProvider {
 	}
 }
 
-// AnalyzeTransaction implements AI analysis using Grok
-func (g *GrokProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
+// AnalyzeTransaction implements AI analysis using Groq
+func (g *GroqProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
 	startTime := time.Now()
 	
 	// Validate input data
@@ -95,17 +95,17 @@ func (g *GrokProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisRe
 	prompt := g.buildAnalysisPrompt(txData)
 	
 	// Try primary API key first with retry logic
-	result, err := g.callGrokAPIWithRetry(g.APIKey, prompt)
+	result, err := g.callGroqAPIWithRetry(g.APIKey, prompt)
 	if err != nil && g.BackupKey != "" {
 		// Fallback to backup key with retry logic
-		result, err = g.callGrokAPIWithRetry(g.BackupKey, prompt)
+		result, err = g.callGroqAPIWithRetry(g.BackupKey, prompt)
 	}
 	
 	if err != nil {
-		return nil, fmt.Errorf("grok analysis failed: %w", err)
+		return nil, fmt.Errorf("groq analysis failed: %w", err)
 	}
 	
-	result.Provider = "grok"
+	result.Provider = "groq"
 	result.ProcessTime = time.Since(startTime).Milliseconds()
 	
 	return result, nil
@@ -140,8 +140,8 @@ func (g *GeminiProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysis
 }
 
 // GetProviderName returns the provider name
-func (g *GrokProvider) GetProviderName() string {
-	return "grok"
+func (g *GroqProvider) GetProviderName() string {
+	return "groq"
 }
 
 func (g *GeminiProvider) GetProviderName() string {
@@ -149,7 +149,7 @@ func (g *GeminiProvider) GetProviderName() string {
 }
 
 // IsAvailable checks if the provider is available
-func (g *GrokProvider) IsAvailable() bool {
+func (g *GroqProvider) IsAvailable() bool {
 	return g.APIKey != ""
 }
 
@@ -158,7 +158,7 @@ func (g *GeminiProvider) IsAvailable() bool {
 }
 
 // buildAnalysisPrompt creates the AI prompt for transaction analysis
-func (g *GrokProvider) buildAnalysisPrompt(txData TransactionData) string {
+func (g *GroqProvider) buildAnalysisPrompt(txData TransactionData) string {
 	return fmt.Sprintf(`Analyze this DeFi transaction for security risks and potential exploits:
 
 Transaction Details:
@@ -226,8 +226,8 @@ Risk Scoring:
 		txData.Hash, txData.From, txData.To, txData.Value, txData.GasLimit, txData.Data)
 }
 
-// callGrokAPI makes the actual API call to Grok
-func (g *GrokProvider) callGrokAPI(apiKey, prompt string) (*AIAnalysisResult, error) {
+// callGroqAPI makes the actual API call to Groq
+func (g *GroqProvider) callGroqAPI(apiKey, prompt string) (*AIAnalysisResult, error) {
 	requestBody := map[string]interface{}{
 		"model": "mixtral-8x7b-32768",
 		"messages": []map[string]string{
@@ -269,7 +269,7 @@ func (g *GrokProvider) callGrokAPI(apiKey, prompt string) (*AIAnalysisResult, er
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var grokResponse struct {
+	var groqResponse struct {
 		Choices []struct {
 			Message struct {
 				Content string `json:"content"`
@@ -277,17 +277,17 @@ func (g *GrokProvider) callGrokAPI(apiKey, prompt string) (*AIAnalysisResult, er
 		} `json:"choices"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&grokResponse); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&groqResponse); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if len(grokResponse.Choices) == 0 {
-		return nil, fmt.Errorf("no response from Grok API")
+	if len(groqResponse.Choices) == 0 {
+		return nil, fmt.Errorf("no response from Groq API")
 	}
 
 	// Parse the AI response JSON
 	var result AIAnalysisResult
-	if err := json.Unmarshal([]byte(grokResponse.Choices[0].Message.Content), &result); err != nil {
+	if err := json.Unmarshal([]byte(groqResponse.Choices[0].Message.Content), &result); err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
@@ -414,13 +414,13 @@ func isValidHash(hash string) bool {
 	return matched
 }
 
-// callGrokAPIWithRetry implements retry logic for Grok API calls
-func (g *GrokProvider) callGrokAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {
+// callGroqAPIWithRetry implements retry logic for Groq API calls
+func (g *GroqProvider) callGroqAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {
 	maxRetries := 3
 	baseDelay := 1 * time.Second
 	
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		result, err := g.callGrokAPI(apiKey, prompt)
+		result, err := g.callGroqAPI(apiKey, prompt)
 		if err == nil {
 			return result, nil
 		}
@@ -436,12 +436,12 @@ func (g *GrokProvider) callGrokAPIWithRetry(apiKey, prompt string) (*AIAnalysisR
 			jitter := time.Duration(float64(delay) * 0.1 * (math.Floor(rand.Float64()*21) - 10)) // ±10% jitter
 			delay += jitter
 			
-			log.Printf("Retrying Grok API call in %v (attempt %d/%d)", delay, attempt+1, maxRetries)
+			log.Printf("Retrying Groq API call in %v (attempt %d/%d)", delay, attempt+1, maxRetries)
 			time.Sleep(delay)
 		}
 	}
 	
-	return nil, fmt.Errorf("Grok API failed after %d attempts", maxRetries)
+	return nil, fmt.Errorf("Groq API failed after %d attempts", maxRetries)
 }
 
 // callGeminiAPIWithRetry implements retry logic for Gemini API calls

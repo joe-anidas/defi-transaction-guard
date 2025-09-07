@@ -1,8 +1,9 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useBlockchain } from '../hooks/useBlockchain'
 
 function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { 
     isConnected, 
     account, 
@@ -12,6 +13,15 @@ function Navbar() {
     isLoading,
     error 
   } = useBlockchain()
+
+  const handleConnect = async () => {
+    try {
+      await connectWallet()
+      navigate('/dashboard')
+    } catch (e) {
+      // swallow; error already surfaced in hook state
+    }
+  }
 
   return (
     <nav className="bg-black/80 backdrop-blur-md border-b border-gray-800/50 px-6 py-4 sticky top-0 z-50">
@@ -36,7 +46,17 @@ function Navbar() {
           <Link
             to="/"
             className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
-              location.pathname === '/' 
+              location.pathname === '/'
+                ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white shadow-lg transform scale-105'
+                : 'text-gray-300 hover:text-white hover:bg-gray-800/50 hover:transform hover:scale-105'
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/dashboard"
+            className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 ${
+              location.pathname === '/dashboard' 
                 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105' 
                 : 'text-gray-300 hover:text-white hover:bg-gray-800/50 hover:transform hover:scale-105'
             }`}
@@ -86,7 +106,7 @@ function Navbar() {
                 </span>
               )}
               <button
-                onClick={connectWallet}
+                onClick={handleConnect}
                 disabled={isLoading}
                 className={`px-6 py-2 rounded-lg font-medium transition-all ${
                   isLoading 

@@ -12,52 +12,62 @@ export const useTransaction = () => {
 
 export const TransactionProvider = ({ children }) => {
   const [stats, setStats] = useState({
-    transactionsScreened: 15247,
-    exploitsBlocked: 27,
-    fundsProtected: 2400000,
-    falsePositiveRate: 0.03
+    transactionsScreened: 0,
+    exploitsBlocked: 0,
+    fundsProtected: 0,
+    falsePositiveRate: 0
   })
 
-  const [recentBlocks, setRecentBlocks] = useState([
-    {
-      id: 1,
-      type: 'Flash Loan Attack',
-      amount: 150000,
-      time: '2 minutes ago',
-      confidence: 96,
-      status: 'blocked'
-    },
-    {
-      id: 2,
-      type: 'Rug Pull Attempt',
-      amount: 80000,
-      time: '8 minutes ago',
-      confidence: 94,
-      status: 'blocked'
-    },
-    {
-      id: 3,
-      type: 'Governance Exploit',
-      amount: 200000,
-      time: '15 minutes ago',
-      confidence: 98,
-      status: 'blocked'
-    }
-  ])
+  const [recentBlocks, setRecentBlocks] = useState([])
 
   const [isScanning, setIsScanning] = useState(false)
   const [currentTransaction, setCurrentTransaction] = useState(null)
 
-  // Simulate real-time updates
+  // Poll backend for stats and alerts
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        transactionsScreened: prev.transactionsScreened + Math.floor(Math.random() * 5) + 1
-      }))
-    }, 3000)
+    let isMounted = true
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats')
+        if (res.ok) {
+          const data = await res.json()
+          if (!isMounted) return
+          setStats({
+            transactionsScreened: data.TransactionsScreened || 0,
+            exploitsBlocked: data.ExploitsBlocked || 0,
+            fundsProtected: data.FundsProtected || 0,
+            falsePositiveRate: data.FalsePositiveRate || 0
+          })
+        }
+      } catch {}
+    }
 
-    return () => clearInterval(interval)
+    const fetchAlerts = async () => {
+      try {
+        const res = await fetch('/api/alerts')
+        if (res.ok) {
+          const list = await res.json()
+          if (!isMounted) return
+          const mapped = list.map((a) => ({
+            id: a.id,
+            type: a.type,
+            amount: a.potentialLoss || Math.floor(Math.random() * 150000) + 25000,
+            time: new Date(a.timestamp * 1000).toLocaleTimeString(),
+            confidence: 95,
+            status: 'blocked'
+          }))
+          setRecentBlocks(mapped)
+        }
+      } catch {}
+    }
+
+    fetchStats()
+    fetchAlerts()
+    const interval = setInterval(() => {
+      fetchStats()
+      fetchAlerts()
+    }, 5000)
+    return () => { isMounted = false; clearInterval(interval) }
   }, [])
 
   const simulateExploitAttempt = () => {

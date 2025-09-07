@@ -1,0 +1,8 @@
+{
+  "networkName": "BlockDAG Testnet",
+  "rpcUrl": "https://rpc-testnet.blockdag.network",
+  "chainId": "0x4CC0",
+  "currencySymbol": "BDAG",
+  "blockExplorerUrl": "https://explorer-testnet.blockdag.network",
+  "description": "BlockDAG Testnet Network Configuration for MetaMask"
+}

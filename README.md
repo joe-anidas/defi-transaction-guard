@@ -2,8 +2,8 @@
 
 > **An AI-powered DeFi firewall built on BlockDAG that screens and blocks malicious transactions in real-time — secured by BDAG staking, powered by GoFr APIs, and accelerated on Akash GPUs.**
 
-[![DeFi Transaction Guard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/your-username/defi-transaction-guard)
-[![AI Integration](https://img.shields.io/badge/AI-Grok%20%2B%20Gemini-blue)](https://groq.com)
+[![DeFi Transaction Guard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/joe-anidas/defi-transaction-guard)
+[![AI Integration](https://img.shields.io/badge/AI-Groq%20%2B%20Gemini-blue)](https://groq.com)
 [![Blockchain](https://img.shields.io/badge/Blockchain-BlockDAG-purple)](https://blockdag.network)
 [![Framework](https://img.shields.io/badge/Backend-GoFr-orange)](https://gofr.dev)
 [![Deployment](https://img.shields.io/badge/Deployment-Akash%20Network-cyan)](https://akash.network)
@@ -78,7 +78,7 @@ A real-time exploit firewall that integrates directly into DeFi smart contracts 
 
 - **Smart Contracts**: Solidity + BlockDAG SDK (firewall modifier, BDAG staking, bridge)
 - **Backend**: Go + GoFr (risk APIs, logging, dashboards)
-- **AI/ML**: Python (TensorFlow/PyTorch models) + Grok + Gemini APIs
+- **AI/ML**: Python (TensorFlow/PyTorch models) + Groq + Gemini APIs
 - **Compute/Hosting**: Akash GPUs (AI inference + dashboard)
 - **Frontend**: React + Tailwind (real-time stats dashboard)
 - **Data Sources**: BlockDAG mempool, threat feeds, transaction logs
@@ -101,7 +101,7 @@ A real-time exploit firewall that integrates directly into DeFi smart contracts 
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/defi-transaction-guard.git
+git clone https://github.com/joe-anidas/defi-transaction-guard.git
 cd defi-transaction-guard
 ```
 
@@ -161,7 +161,7 @@ Create `.env` files in each service directory:
 ```bash
 # AI Service Integration
 AI_SERVICE_URL=http://localhost:5000
-GROK_API_KEY=your_grok_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # BlockDAG Integration
@@ -180,7 +180,7 @@ LOG_LEVEL=info
 #### AI Service (.env)
 ```bash
 # AI Providers
-GROK_API_KEY=your_grok_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # Redis Cache
@@ -389,7 +389,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **BlockDAG** - High-performance blockchain infrastructure
 - **Akash Network** - Decentralized cloud computing
 - **GoFr Framework** - Golang microservice framework
-- **Grok & Gemini** - AI-powered threat detection
+- **Groq & Gemini** - AI-powered threat detection
 
 ## 🔗 Links
 

@@ -450,6 +450,85 @@
       "artifacts": [
         "MockBDAG"
       ]
+    },
+    "/Users/joe/Documents/GitHub/defi-transaction-guard/blockchain/contracts/OptimizedTransactionGuard.sol": {
+      "lastModificationDate": 1757195032346,
+      "contentHash": "f565d2abc3899530a4090898ee4c495e",
+      "sourceName": "contracts/OptimizedTransactionGuard.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/security/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/security/Pausable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "OptimizedTransactionGuard"
+      ]
+    },
+    "/Users/joe/Documents/GitHub/defi-transaction-guard/blockchain/contracts/OptimizedProtectedDEX.sol": {
+      "lastModificationDate": 1757195084794,
+      "contentHash": "8d17a2d43c50a193a64ce4693cb1a66c",
+      "sourceName": "contracts/OptimizedProtectedDEX.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./OptimizedTransactionGuard.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/security/ReentrancyGuard.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "OptimizedProtectedDEX"
+      ]
     }
   }
 }

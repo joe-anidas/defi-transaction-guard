@@ -126,10 +126,17 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'http://127.0.0.1:8545',
     chainId: 31337
   },
-  12345: {
+  19648: {
     name: 'BlockDAG Testnet',
     rpcUrl: 'https://rpc-testnet.blockdag.network',
-    chainId: 12345
+    chainId: 19648,
+    nativeCurrency: { name: 'BDAG', symbol: 'BDAG', decimals: 18 }
+  },
+  11155111: {
+    name: 'Sepolia',
+    rpcUrl: 'https://rpc.sepolia.org',
+    chainId: 11155111,
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }
   }
 }
 
@@ -154,11 +161,7 @@ export const addNetworkToWallet = async (chainId) => {
         chainId: `0x${chainId.toString(16)}`,
         chainName: network.name,
         rpcUrls: [network.rpcUrl],
-        nativeCurrency: {
-          name: 'ETH',
-          symbol: 'ETH',
-          decimals: 18
-        }
+        nativeCurrency: network.nativeCurrency || { name: 'ETH', symbol: 'ETH', decimals: 18 }
       }]
     })
   } catch (error) {

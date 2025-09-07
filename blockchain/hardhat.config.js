@@ -18,11 +18,11 @@ module.exports = {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    // BlockDAG testnet (replace with actual RPC when available)
+    // BlockDAG testnet
     blockdag_testnet: {
       url: process.env.BLOCKDAG_RPC_URL || "https://rpc-testnet.blockdag.network",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 31337, // Replace with actual BlockDAG chain ID
+      chainId: 19648, // BlockDAG testnet chain ID
     },
     // BlockDAG simulation (for demo when testnet unavailable)
     blockdag_sim: {

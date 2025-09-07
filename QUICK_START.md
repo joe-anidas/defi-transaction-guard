@@ -4,7 +4,7 @@
 
 ```bash
 # Clone and run everything
-git clone https://github.com/your-username/defi-transaction-guard.git
+git clone https://github.com/joe-anidas/defi-transaction-guard.git
 cd defi-transaction-guard
 ./run.sh
 ```
@@ -26,7 +26,7 @@ cd defi-transaction-guard
 
 ### **2. Clone Repository**
 ```bash
-git clone https://github.com/your-username/defi-transaction-guard.git
+git clone https://github.com/joe-anidas/defi-transaction-guard.git
 cd defi-transaction-guard
 ```
 
@@ -127,7 +127,7 @@ Create `.env` files in each service:
 #### **Backend (.env)**
 ```bash
 AI_SERVICE_URL=http://localhost:5000
-GROK_API_KEY=your_grok_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 BLOCKDAG_NODE_URL=https://rpc.blockdag.network
 BLOCKDAG_API_KEY=your_blockdag_api_key_here
@@ -136,7 +136,7 @@ LOG_LEVEL=info
 
 #### **AI Service (.env)**
 ```bash
-GROK_API_KEY=your_grok_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 REDIS_HOST=localhost
 REDIS_PORT=6379
@@ -225,7 +225,7 @@ akash tx deployment create demo-sdl.yaml --from defi-guard-wallet
   "confidence": 0.92,
   "reasoning": "High gas limit with complex call data suggests flash loan attack pattern",
   "indicators": ["high-gas-limit", "complex-call-data", "flash-loan-pattern"],
-  "provider": "grok-akash",
+  "provider": "groq-akash",
   "processTime": 156,
   "timestamp": "2024-01-15T10:30:00Z"
 }
@@ -240,7 +240,7 @@ akash tx deployment create demo-sdl.yaml --from defi-guard-wallet
   "confidence": 0.92,
   "reasoning": "AI analysis detected flash loan attack pattern",
   "indicators": ["high-gas-limit", "complex-call-data"],
-  "provider": "grok-akash",
+  "provider": "groq-akash",
   "processTime": 156,
   "isBlocked": true,
   "timestamp": 1705312200
@@ -309,7 +309,7 @@ If everything is working, you should see:
 ## **📞 Support**
 
 - **Documentation**: [Full README](README.md)
-- **Issues**: [GitHub Issues](https://github.com/your-username/defi-transaction-guard/issues)
+- **Issues**: [GitHub Issues](https://github.com/joe-anidas/defi-transaction-guard/issues)
 - **Discord**: [Community Support](https://discord.gg/your-discord)
 
 **Happy coding!** 🚀

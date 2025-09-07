@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add BlockDAG Testnet to MetaMask</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #f6851b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #e2761b;
+        }
+        .network-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .error {
+            color: #dc3545;
+            margin: 10px 0;
+        }
+        .success {
+            color: #28a745;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add BlockDAG Testnet to MetaMask</h1>
+        
+        <div class="network-info">
+            <h3>Network Details:</h3>
+            <p><strong>Network Name:</strong> BlockDAG Testnet</p>
+            <p><strong>RPC URL:</strong> https://rpc-testnet.blockdag.network</p>
+            <p><strong>Chain ID:</strong> 19648 (0x4CC0)</p>
+            <p><strong>Currency Symbol:</strong> BDAG</p>
+            <p><strong>Block Explorer:</strong> https://explorer-testnet.blockdag.network</p>
+        </div>
+
+        <button onclick="addBlockDAGNetwork()">Add BlockDAG Testnet to MetaMask</button>
+        
+        <div id="status"></div>
+
+        <h3>Manual Setup Instructions:</h3>
+        <ol>
+            <li>Open MetaMask</li>
+            <li>Click on the network dropdown (usually shows "Ethereum Mainnet")</li>
+            <li>Click "Add Network" or "Custom RPC"</li>
+            <li>Fill in the network details shown above</li>
+            <li>Click "Save" or "Add"</li>
+        </ol>
+    </div>
+
+    <script>
+        async function addBlockDAGNetwork() {
+            const statusDiv = document.getElementById('status');
+            
+            if (typeof window.ethereum === 'undefined') {
+                statusDiv.innerHTML = '<div class="error">MetaMask is not installed. Please install MetaMask first.</div>';
+                return;
+            }
+
+            try {
+                // Request account access
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Add the BlockDAG network
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x4CC0', // 19648 in hex
+                        chainName: 'BlockDAG Testnet',
+                        nativeCurrency: {
+                            name: 'BlockDAG',
+                            symbol: 'BDAG',
+                            decimals: 18
+                        },
+                        rpcUrls: ['https://rpc-testnet.blockdag.network'],
+                        blockExplorerUrls: ['https://explorer-testnet.blockdag.network']
+                    }]
+                });
+                
+                statusDiv.innerHTML = '<div class="success">BlockDAG Testnet has been added to MetaMask successfully!</div>';
+                
+            } catch (error) {
+                console.error('Error adding network:', error);
+                
+                if (error.code === 4902) {
+                    statusDiv.innerHTML = '<div class="error">Network already exists in MetaMask.</div>';
+                } else if (error.code === -32602) {
+                    statusDiv.innerHTML = '<div class="error">Invalid network parameters. Please check the network details.</div>';
+                } else if (error.code === 4001) {
+                    statusDiv.innerHTML = '<div class="error">User rejected the request.</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

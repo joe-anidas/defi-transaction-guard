@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DeFi Transaction Guard AI Service for Akash Network
-GPU-accelerated AI analysis with Grok and Gemini integration
+GPU-accelerated AI analysis with Groq and Gemini integration
 Compatible with GoFr backend API structure
 """
 
@@ -32,22 +32,22 @@ app = Flask(__name__)
 CORS(app)
 
 # Global variables
-grok_client = None
+groq_client = None
 gemini_model = None
 redis_client = None
 
 # Initialize AI clients
 def initialize_ai_clients():
-    global grok_client, gemini_model, redis_client
+    global groq_client, gemini_model, redis_client
     
-    # Initialize Grok
-    grok_api_key = os.getenv('GROK_API_KEY')
-    if grok_api_key:
+    # Initialize Groq
+    groq_api_key = os.getenv('GROQ_API_KEY')
+    if groq_api_key:
         try:
-            grok_client = Groq(api_key=grok_api_key)
-            logger.info("✅ Grok client initialized")
+            groq_client = Groq(api_key=groq_api_key)
+            logger.info("✅ Groq client initialized")
         except Exception as e:
-            logger.error(f"❌ Grok initialization failed: {e}")
+            logger.error(f"❌ Groq initialization failed: {e}")
     
     # Initialize Gemini
     gemini_api_key = os.getenv('GEMINI_API_KEY')
@@ -85,12 +85,12 @@ def health_check():
     cache_stats = get_cache_stats()
     
     # Check AI provider availability
-    grok_status = "available" if grok_client is not None else "unavailable"
+    groq_status = "available" if groq_client is not None else "unavailable"
     gemini_status = "available" if gemini_model is not None else "unavailable"
     
     # Overall health status
     overall_status = "healthy"
-    if not grok_client and not gemini_model:
+    if not groq_client and not gemini_model:
         overall_status = "degraded"  # Only heuristic available
     elif not redis_client:
         overall_status = "degraded"  # No caching
@@ -102,15 +102,15 @@ def health_check():
         "version": "2.0.0",
         "provider": "akash-network",
         "capabilities": {
-            "grok_available": grok_client is not None,
+            "groq_available": groq_client is not None,
             "gemini_available": gemini_model is not None,
             "cache_available": redis_client is not None,
             "gpu_available": gpu_available,
-            "models": ["grok-mixtral", "gemini-pro", "heuristic-fallback"]
+            "models": ["groq-mixtral", "gemini-pro", "heuristic-fallback"]
         },
         "providers": {
-            "grok": {
-                "status": grok_status,
+            "groq": {
+                "status": groq_status,
                 "model": "mixtral-8x7b-32768",
                 "latency": "~150ms"
             },
@@ -232,7 +232,7 @@ def get_stats():
         "gpu_info": get_gpu_info(),
         "cache_stats": get_cache_stats(),
         "ai_providers": {
-            "grok": grok_client is not None,
+            "groq": groq_client is not None,
             "gemini": gemini_model is not None
         }
     })
@@ -240,15 +240,15 @@ def get_stats():
 def perform_ai_analysis(tx_data: Dict[str, Any]) -> Dict[str, Any]:
     """Perform AI analysis on transaction data"""
     
-    # Try Grok first (best for DeFi analysis)
-    if grok_client:
+    # Try Groq first (best for DeFi analysis)
+    if groq_client:
         try:
-            result = analyze_with_grok(tx_data)
+            result = analyze_with_groq(tx_data)
             if result:
-                result['provider'] = 'grok-akash'
+                result['provider'] = 'groq-akash'
                 return result
         except Exception as e:
-            logger.warning(f"Grok analysis failed: {e}")
+            logger.warning(f"Groq analysis failed: {e}")
     
     # Try Gemini as fallback
     if gemini_model:
@@ -263,11 +263,11 @@ def perform_ai_analysis(tx_data: Dict[str, Any]) -> Dict[str, Any]:
     # Heuristic fallback
     return analyze_with_heuristics(tx_data)
 
-def analyze_with_grok(tx_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Analyze transaction using Grok AI"""
+def analyze_with_groq(tx_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Analyze transaction using Groq AI"""
     prompt = build_analysis_prompt(tx_data)
     
-    response = grok_client.chat.completions.create(
+    response = groq_client.chat.completions.create(
         model="mixtral-8x7b-32768",
         messages=[
             {
@@ -611,7 +611,7 @@ if __name__ == '__main__':
     initialize_ai_clients()
     
     # Print startup info
-    logger.info(f"Grok available: {grok_client is not None}")
+    logger.info(f"Groq available: {groq_client is not None}")
     logger.info(f"Gemini available: {gemini_model is not None}")
     logger.info(f"Cache available: {redis_client is not None}")
     logger.info(f"GPU available: {check_gpu_availability()}")
@@ -634,10 +634,10 @@ def ai_status_gofr():
     return jsonify({
         "success": True,
         "providers": {
-            "grok": {
-                "available": grok_client is not None,
+            "groq": {
+                "available": groq_client is not None,
                 "model": "mixtral-8x7b-32768",
-                "status": "online" if grok_client else "offline"
+                "status": "online" if groq_client else "offline"
             },
             "gemini": {
                 "available": gemini_model is not None,
@@ -716,8 +716,8 @@ def ai_providers_gofr():
         "success": True,
         "providers": [
             {
-                "name": "grok",
-                "available": grok_client is not None,
+                "name": "groq",
+                "available": groq_client is not None,
                 "model": "mixtral-8x7b-32768",
                 "capabilities": ["transaction-analysis", "threat-detection", "risk-scoring"],
                 "priority": 1
@@ -739,7 +739,7 @@ def ai_providers_gofr():
         ],
         "total_providers": 3,
         "active_providers": sum([
-            1 if grok_client else 0,
+            1 if groq_client else 0,
             1 if gemini_model else 0,
             1  # heuristic always available
         ])
@@ -828,7 +828,7 @@ def prometheus_metrics():
     
     # AI service metrics
     metrics.append(f"ai_service_uptime_seconds {get_uptime_seconds()}")
-    metrics.append(f"ai_providers_available {sum([1 if grok_client else 0, 1 if gemini_model else 0, 1])}")
+    metrics.append(f"ai_providers_available {sum([1 if groq_client else 0, 1 if gemini_model else 0, 1])}")
     metrics.append(f"gpu_available {1 if check_gpu_availability() else 0}")
     metrics.append(f"cache_available {1 if redis_client else 0}")
     
