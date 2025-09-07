@@ -17,6 +17,8 @@ DeFi has lost over **$15B to hacks and exploits** in 2024 alone—flash loan att
 
 A comprehensive real-time security system that analyzes every transaction before execution using Google Gemini AI. Features smart contract firewall integration, MetaMask wallet connectivity, and intelligent risk assessment with automatic blocking of malicious transactions on BlockDAG.
 
+> 📊 **Architecture Overview**: See our [detailed system architecture diagrams](#-system-architecture) below for complete technical implementation.
+
 ## ⚙️ How It Works
 
 ### 1. **Real-Time Transaction Analysis**
@@ -48,6 +50,34 @@ A comprehensive real-time security system that analyzes every transaction before
 - **Backend**: Go with GoFr framework handling AI orchestration and blockchain integration
 - **AI Service**: Python Flask service with Google Gemini AI and machine learning libraries
 - **Smart Contracts**: Solidity contracts with OpenZeppelin security patterns on BlockDAG
+
+## 🏗️ System Architecture
+
+### High-Level Architecture Overview
+![DeFi Transaction Guard Architecture](./architecture.svg)
+
+### Detailed Component Architecture  
+![DeFi Transaction Guard Detailed Architecture](./architecture2.svg)
+
+The architecture diagrams above illustrate our comprehensive multi-service security infrastructure:
+
+**🔄 Transaction Flow:**
+1. **User Interaction** → MetaMask wallet connects to React frontend
+2. **Transaction Submission** → Frontend sends transaction data to GoFr backend
+3. **AI Analysis** → Backend orchestrates Google Gemini AI risk assessment
+4. **Smart Contract Execution** → Protected transactions executed on BlockDAG
+5. **Real-time Updates** → WebSocket streams update dashboard with results
+
+**🛡️ Security Layers:**
+- **Frontend Security** → MetaMask integration with user confirmation flows
+- **API Security** → GoFr backend with comprehensive input validation  
+- **AI Security** → Google Gemini Pro with fallback analysis systems
+- **Blockchain Security** → Smart contract firewall with economic incentives
+
+**⚡ Performance Optimization:**
+- **Parallel Processing** → BlockDAG enables simultaneous transaction analysis
+- **Caching Layer** → Redis optimization for AI response acceleration
+- **Load Balancing** → Akash Network deployment for horizontal scaling
 
 ## 🔑 Key Features
 
@@ -668,6 +698,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **Live Demo Dashboard**: [http://localhost:5173](http://localhost:5173)
 - **Interactive Demo**: [http://localhost:5173/demo](http://localhost:5173/demo)
 - **API Documentation**: [http://localhost:8080/health](http://localhost:8080/health)
+- **System Architecture**: [High-Level Overview](./architecture.svg) | [Detailed Components](./architecture2.svg)
 - **Smart Contract Explorer**: [BlockDAG Primordial Testnet](https://primordial.bdagscan.com)
 - **Google Gemini AI**: [API Key Setup](https://makersuite.google.com/app/apikey)
 - **BlockDAG Network**: [Official Documentation](https://blockdag.network)
