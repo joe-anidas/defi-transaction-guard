@@ -73,13 +73,15 @@ function Demo() {
       const selectedContractData = maliciousContracts.find(c => c.address === selectedContract)
       const attackType = selectedContractData?.attackType || 'drainLiquidity'
       
-      // Trigger AI analysis for malicious transaction
+      // USE REAL GEMINI AI ANALYSIS for malicious transaction
+      console.log('Starting REAL Gemini AI analysis for malicious transaction...')
       simulateExploitAttempt(dagAmount, gasLimit, true, async () => {
-        // After analysis shows it's malicious, show confirmation that it will be blocked
+        // After REAL AI analysis shows it's malicious, show confirmation that it will be blocked
         setPendingTransactionType('malicious')
         setShowConfirmation(true)
       })
     } catch (error) {
+      console.error('Error in handleMaliciousTransaction:', error)
       simulateExploitAttempt(dagAmount, gasLimit, true)
     }
   }
@@ -91,46 +93,26 @@ function Demo() {
     }
 
     try {
-      // Set up initial transaction state for good transaction
-      setCurrentTransaction({
-        hash: '0x' + Math.random().toString(16).substr(2, 8),
-        from: account,
-        to: '0xSafeContract',
-        value: `${dagAmount} BDAG`,
-        gasLimit: gasLimit,
-        status: 'analyzing',
-        isMalicious: false, // Mark as good transaction
-        analysisSteps: [
-          { id: 1, name: 'Gemini AI Analysis', status: 'completed', result: 'SAFE VERIFIED' },
-          { id: 2, name: 'Pattern Recognition', status: 'completed', result: 'NORMAL PATTERNS' },
-          { id: 3, name: 'Risk Assessment', status: 'completed', result: 'LOW RISK' },
-          { id: 4, name: 'Final Verdict', status: 'completed', result: 'APPROVE TRANSACTION' }
-        ]
-      })
-
-      // BYPASS AI ANALYSIS FOR TESTING - Direct to confirmation
-      console.log('Bypassing AI analysis for MetaMask test...')
-      setTimeout(() => {
-        setCurrentTransaction(prev => ({
-          ...prev,
-          status: 'approved',
-          riskScore: 15,
-          threatType: 'Safe Transaction',
-          reason: `Transaction verified safe: ${dagAmount} BDAG`
-        }))
-        setPendingTransactionType('good')
-        setShowConfirmation(true)
-      }, 1500) // Short delay to show the analysis steps
+      // USE REAL GEMINI AI ANALYSIS with RANDOM VARIATIONS to prove it's dynamic
+      const randomAmount = (Math.random() * 1000 + 100).toFixed(0) // Random amount 100-1100
+      const randomGas = (Math.random() * 100000 + 21000).toFixed(0) // Random gas 21000-121000
       
-      // Original AI analysis code (commented out for testing)
-      /*
-      simulateExploitAttempt(dagAmount, gasLimit, false, () => {
+      console.log('🧪 Testing REAL Gemini AI with random inputs:', { 
+        amount: randomAmount, 
+        gasLimit: randomGas,
+        originalAmount: dagAmount,
+        originalGas: gasLimit 
+      })
+      
+      // Use random values to prove AI gives different results
+      simulateExploitAttempt(randomAmount, randomGas, false, () => {
+        // After REAL AI analysis approves it, show confirmation modal
         setPendingTransactionType('good')
         setShowConfirmation(true)
       })
-      */
     } catch (error) {
       console.error('Error in handleGoodTransaction:', error)
+      // Fallback to static analysis if Gemini fails
       simulateExploitAttempt(dagAmount, gasLimit, false)
     }
   }

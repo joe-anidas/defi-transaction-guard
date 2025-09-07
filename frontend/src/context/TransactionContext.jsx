@@ -67,6 +67,8 @@ export const TransactionProvider = ({ children }) => {
 
   // Real AI analysis using Gemini
   const performGeminiAnalysis = async (amount, gasLimit, isMalicious, functionName = 'transfer') => {
+    console.log('🔍 Starting performGeminiAnalysis with:', { amount, gasLimit, isMalicious, functionName })
+    
     const transactionData = {
       amount,
       gasLimit,
@@ -75,7 +77,10 @@ export const TransactionProvider = ({ children }) => {
       functionName: isMalicious ? 'drainLiquidity' : 'transfer'
     }
 
+    console.log('📤 Sending to Gemini AI:', transactionData)
     const analysisResult = await analyzeTransaction(transactionData)
+    console.log('📥 Received from Gemini AI:', analysisResult)
+    
     return analysisResult.analysis
   }
 

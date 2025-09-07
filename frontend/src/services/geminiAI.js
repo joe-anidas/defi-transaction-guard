@@ -10,10 +10,15 @@ export const analyzeTransaction = async (transactionData) => {
   try {
     // Check if API key is properly configured
     if (!genAI || !apiKey || apiKey === 'your_gemini_api_key_here') {
-      console.warn('Gemini AI API key not configured, using fallback analysis')
-      return getFallbackAnalysis(transactionData)
+      console.warn('🚨 Gemini AI API key not configured, using fallback analysis')
+      return {
+        success: false,
+        usingFallback: true,
+        analysis: getFallbackAnalysis(transactionData)
+      }
     }
 
+    console.log('🤖 CALLING REAL GEMINI AI with data:', transactionData)
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
     const prompt = `
@@ -50,12 +55,17 @@ Be thorough in your analysis and provide actionable insights.
     const response = await result.response
     const text = response.text()
 
+    console.log('🤖 REAL GEMINI AI RESPONSE:', text)
+
     // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       const analysis = JSON.parse(jsonMatch[0])
+      console.log('✅ REAL AI ANALYSIS PARSED:', analysis)
       return {
         success: true,
+        usingFallback: false,
+        realAI: true,
         analysis: {
           riskScore: Math.min(100, Math.max(0, analysis.riskScore || 0)),
           threatType: analysis.threatType || 'Unknown',
@@ -70,9 +80,10 @@ Be thorough in your analysis and provide actionable insights.
       return parseTextResponse(text, transactionData)
     }
   } catch (error) {
-    console.error('Gemini AI analysis failed:', error)
+    console.error('❌ Gemini AI analysis failed:', error)
     return {
       success: false,
+      usingFallback: true,
       error: error.message,
       analysis: getFallbackAnalysis(transactionData)
     }
