@@ -9,8 +9,8 @@ export const checkBlockchainStatus = async () => {
   }
 
   try {
-    // Try to connect to localhost
-    const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545')
+    // Try to connect to BlockDAG Testnet
+    const provider = new ethers.providers.JsonRpcProvider('https://rpc.primordial.bdagscan.com')
     
     // Check if blockchain is running
     const network = await provider.getNetwork()
@@ -55,9 +55,9 @@ export const getSetupInstructions = (status) => {
   if (!status.isRunning) {
     instructions.push({
       step: 1,
-      title: "Start Local Blockchain",
-      command: "cd blockchain && npm run node",
-      description: "Start the Hardhat local blockchain"
+      title: "Connect to BlockDAG Testnet",
+      command: "Network: BlockDAG Testnet (Chain ID: 1043)",
+      description: "Connect to BlockDAG Testnet at rpc.primordial.bdagscan.com"
     })
   }
 
@@ -65,8 +65,8 @@ export const getSetupInstructions = (status) => {
     instructions.push({
       step: 2,
       title: "Deploy Contracts",
-      command: "cd blockchain && npm run deploy",
-      description: "Deploy smart contracts to the local blockchain"
+      command: "cd blockchain && npm run deploy:testnet",
+      description: "Deploy smart contracts to BlockDAG Testnet"
     })
   }
 
@@ -74,7 +74,7 @@ export const getSetupInstructions = (status) => {
     instructions.push({
       step: "✅",
       title: "Ready to Demo!",
-      description: "Blockchain is running and contracts are deployed"
+      description: "Connected to BlockDAG Testnet and contracts are deployed"
     })
   }
 

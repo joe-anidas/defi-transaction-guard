@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import logo from '../assets/logo.png'
 
 const Home = () => {
   return (
@@ -10,11 +11,13 @@ const Home = () => {
           <div className="grid grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-6 col-span-12">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                  <span className="text-white text-xl">🛡️</span>
-                </div>
+              <img 
+  src={logo} 
+  alt="icon" 
+  className="w-10 h-10 object-contain border-2 border-white rounded-md" 
+/>
                 <p className="text-white text-xl m-0">
-                  Real-time DeFi Transaction <span className="text-blue-400">Guard</span>
+                  Real-time <span className="text-blue-400">DeFi Transaction Guard</span>
                 </p>
               </div>
               <h1 className="font-medium lg:text-6xl md:text-5xl text-4xl text-white leading-tight mb-6">

@@ -56,13 +56,13 @@ type RiskProfile struct {
 func NewBlockDAGIntegration() (*BlockDAGIntegration, error) {
 	nodeURL := os.Getenv("BLOCKDAG_NODE_URL")
 	if nodeURL == "" {
-		nodeURL = "https://rpc.blockdag.network" // Default BlockDAG RPC
+		nodeURL = "https://rpc.primordial.bdagscan.com" // Default BlockDAG Testnet RPC
 	}
 	
 	apiKey := os.Getenv("BLOCKDAG_API_KEY")
 	networkID := os.Getenv("BLOCKDAG_NETWORK_ID")
 	if networkID == "" {
-		networkID = "mainnet"
+		networkID = "1043" // BlockDAG Testnet chain ID
 	}
 	
 	return &BlockDAGIntegration{

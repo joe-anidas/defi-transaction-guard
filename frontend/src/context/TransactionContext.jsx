@@ -28,7 +28,7 @@ export const TransactionProvider = ({ children }) => {
     let isMounted = true
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/stats')
+        const res = await fetch('http://localhost:8080/api/stats')
         if (res.ok) {
           const data = await res.json()
           if (!isMounted) return
@@ -44,7 +44,7 @@ export const TransactionProvider = ({ children }) => {
 
     const fetchAlerts = async () => {
       try {
-        const res = await fetch('/api/alerts')
+        const res = await fetch('http://localhost:8080/api/alerts')
         if (res.ok) {
           const list = await res.json()
           if (!isMounted) return

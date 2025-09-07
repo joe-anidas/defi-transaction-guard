@@ -20,15 +20,15 @@ module.exports = {
     },
     // BlockDAG testnet
     blockdag_testnet: {
-      url: process.env.BLOCKDAG_RPC_URL || "https://rpc-testnet.blockdag.network",
+      url: process.env.BLOCKDAG_RPC_URL || "https://rpc.primordial.bdagscan.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 19648, // BlockDAG testnet chain ID
+      chainId: 1043, // BlockDAG testnet chain ID
     },
     // BlockDAG simulation (for demo when testnet unavailable)
     blockdag_sim: {
-      url: "http://127.0.0.1:8545",
+      url: "https://rpc.primordial.bdagscan.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 31337, // Simulate BlockDAG chain ID
+      chainId: 1043, // BlockDAG testnet chain ID
     },
     // For demo purposes, we can use Polygon Mumbai or other testnets
     polygon_mumbai: {

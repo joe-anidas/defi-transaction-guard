@@ -32,10 +32,10 @@ type RiskScoreUpdate struct {
 
 // NewBlockchainIntegration creates a new blockchain integration
 func NewBlockchainIntegration() (*BlockchainIntegration, error) {
-	// Connect to blockchain (BlockDAG or local network)
+	// Connect to BlockDAG network
 	rpcURL := os.Getenv("BLOCKCHAIN_RPC_URL")
 	if rpcURL == "" {
-		rpcURL = "http://localhost:8545" // Default to local
+		rpcURL = "https://rpc.primordial.bdagscan.com" // Default to BlockDAG Testnet
 	}
 	
 	client, err := ethclient.Dial(rpcURL)
@@ -87,7 +87,7 @@ func (b *BlockchainIntegration) UpdateRiskScore(contractAddr string, riskScore i
 	}
 	
 	// Prepare transaction
-	auth, err := bind.NewKeyedTransactorWithChainID(b.privateKey, big.NewInt(31337)) // BlockDAG chain ID
+	auth, err := bind.NewKeyedTransactorWithChainID(b.privateKey, big.NewInt(1043)) // BlockDAG Testnet chain ID
 	if err != nil {
 		return fmt.Errorf("failed to create transactor: %w", err)
 	}
@@ -138,7 +138,7 @@ func (b *BlockchainIntegration) BatchUpdateRiskScores(updates []RiskScoreUpdate)
 	}
 	
 	// Prepare transaction
-	auth, err := bind.NewKeyedTransactorWithChainID(b.privateKey, big.NewInt(31337))
+	auth, err := bind.NewKeyedTransactorWithChainID(b.privateKey, big.NewInt(1043))
 	if err != nil {
 		return fmt.Errorf("failed to create transactor: %w", err)
 	}

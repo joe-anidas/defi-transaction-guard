@@ -67,8 +67,6 @@ PORT=8080
 HOST=localhost
 
 # AI API Keys (required for full functionality)
-GROQ_API=gsk_your_groq_api_key_here
-GROQ_API_2=gsk_backup_groq_key_here
 GEMINI_API=your_gemini_api_key_here
 GEMINI_API_2=backup_gemini_key_here
 

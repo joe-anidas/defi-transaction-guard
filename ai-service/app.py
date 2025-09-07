@@ -17,7 +17,6 @@ import redis
 import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from groq import Groq
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -32,29 +31,19 @@ app = Flask(__name__)
 CORS(app)
 
 # Global variables
-groq_client = None
 gemini_model = None
 redis_client = None
 
 # Initialize AI clients
 def initialize_ai_clients():
-    global groq_client, gemini_model, redis_client
-    
-    # Initialize Groq
-    groq_api_key = os.getenv('GROQ_API_KEY')
-    if groq_api_key:
-        try:
-            groq_client = Groq(api_key=groq_api_key)
-            logger.info("✅ Groq client initialized")
-        except Exception as e:
-            logger.error(f"❌ Groq initialization failed: {e}")
+    global gemini_model, redis_client
     
     # Initialize Gemini
     gemini_api_key = os.getenv('GEMINI_API_KEY')
     if gemini_api_key:
         try:
             genai.configure(api_key=gemini_api_key)
-            gemini_model = genai.GenerativeModel('gemini-pro')
+            gemini_model = genai.GenerativeModel('gemini-2.0-flash')
             logger.info("✅ Gemini client initialized")
         except Exception as e:
             logger.error(f"❌ Gemini initialization failed: {e}")
@@ -85,12 +74,11 @@ def health_check():
     cache_stats = get_cache_stats()
     
     # Check AI provider availability
-    groq_status = "available" if groq_client is not None else "unavailable"
     gemini_status = "available" if gemini_model is not None else "unavailable"
     
     # Overall health status
     overall_status = "healthy"
-    if not groq_client and not gemini_model:
+    if not gemini_model:
         overall_status = "degraded"  # Only heuristic available
     elif not redis_client:
         overall_status = "degraded"  # No caching
@@ -102,22 +90,16 @@ def health_check():
         "version": "2.0.0",
         "provider": "akash-network",
         "capabilities": {
-            "groq_available": groq_client is not None,
             "gemini_available": gemini_model is not None,
             "cache_available": redis_client is not None,
             "gpu_available": gpu_available,
-            "models": ["groq-mixtral", "gemini-pro", "heuristic-fallback"]
+            "models": ["gemini-2.0-flash", "heuristic-fallback"]
         },
         "providers": {
-            "groq": {
-                "status": groq_status,
-                "model": "mixtral-8x7b-32768",
-                "latency": "~150ms"
-            },
             "gemini": {
                 "status": gemini_status,
-                "model": "gemini-pro",
-                "latency": "~120ms"
+                "model": "gemini-2.0-flash",
+                "latency": "~100ms"
             },
             "heuristic": {
                 "status": "available",
@@ -232,7 +214,6 @@ def get_stats():
         "gpu_info": get_gpu_info(),
         "cache_stats": get_cache_stats(),
         "ai_providers": {
-            "groq": groq_client is not None,
             "gemini": gemini_model is not None
         }
     })
@@ -240,17 +221,7 @@ def get_stats():
 def perform_ai_analysis(tx_data: Dict[str, Any]) -> Dict[str, Any]:
     """Perform AI analysis on transaction data"""
     
-    # Try Groq first (best for DeFi analysis)
-    if groq_client:
-        try:
-            result = analyze_with_groq(tx_data)
-            if result:
-                result['provider'] = 'groq-akash'
-                return result
-        except Exception as e:
-            logger.warning(f"Groq analysis failed: {e}")
-    
-    # Try Gemini as fallback
+    # Try Gemini first
     if gemini_model:
         try:
             result = analyze_with_gemini(tx_data)
@@ -263,34 +234,6 @@ def perform_ai_analysis(tx_data: Dict[str, Any]) -> Dict[str, Any]:
     # Heuristic fallback
     return analyze_with_heuristics(tx_data)
 
-def analyze_with_groq(tx_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Analyze transaction using Groq AI"""
-    prompt = build_analysis_prompt(tx_data)
-    
-    response = groq_client.chat.completions.create(
-        model="mixtral-8x7b-32768",
-        messages=[
-            {
-                "role": "system", 
-                "content": "You are an expert DeFi security analyst. Respond only with valid JSON containing risk analysis."
-            },
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.1,
-        max_tokens=1500
-    )
-    
-    content = response.choices[0].message.content.strip()
-    
-    # Extract JSON from response
-    start = content.find('{')
-    end = content.rfind('}') + 1
-    
-    if start != -1 and end > start:
-        json_str = content[start:end]
-        return json.loads(json_str)
-    
-    return None
 
 def analyze_with_gemini(tx_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Analyze transaction using Gemini AI"""
@@ -611,7 +554,6 @@ if __name__ == '__main__':
     initialize_ai_clients()
     
     # Print startup info
-    logger.info(f"Groq available: {groq_client is not None}")
     logger.info(f"Gemini available: {gemini_model is not None}")
     logger.info(f"Cache available: {redis_client is not None}")
     logger.info(f"GPU available: {check_gpu_availability()}")
@@ -634,14 +576,9 @@ def ai_status_gofr():
     return jsonify({
         "success": True,
         "providers": {
-            "groq": {
-                "available": groq_client is not None,
-                "model": "mixtral-8x7b-32768",
-                "status": "online" if groq_client else "offline"
-            },
             "gemini": {
                 "available": gemini_model is not None,
-                "model": "gemini-pro",
+                "model": "gemini-2.0-flash",
                 "status": "online" if gemini_model else "offline"
             },
             "heuristic": {
@@ -716,18 +653,11 @@ def ai_providers_gofr():
         "success": True,
         "providers": [
             {
-                "name": "groq",
-                "available": groq_client is not None,
-                "model": "mixtral-8x7b-32768",
-                "capabilities": ["transaction-analysis", "threat-detection", "risk-scoring"],
-                "priority": 1
-            },
-            {
                 "name": "gemini",
                 "available": gemini_model is not None,
-                "model": "gemini-pro",
+                "model": "gemini-2.0-flash",
                 "capabilities": ["transaction-analysis", "threat-detection", "risk-scoring"],
-                "priority": 2
+                "priority": 1
             },
             {
                 "name": "heuristic",
@@ -737,9 +667,8 @@ def ai_providers_gofr():
                 "priority": 3
             }
         ],
-        "total_providers": 3,
+        "total_providers": 2,
         "active_providers": sum([
-            1 if groq_client else 0,
             1 if gemini_model else 0,
             1  # heuristic always available
         ])
@@ -828,7 +757,7 @@ def prometheus_metrics():
     
     # AI service metrics
     metrics.append(f"ai_service_uptime_seconds {get_uptime_seconds()}")
-    metrics.append(f"ai_providers_available {sum([1 if groq_client else 0, 1 if gemini_model else 0, 1])}")
+    metrics.append(f"ai_providers_available {sum([1 if gemini_model else 0, 1])}")
     metrics.append(f"gpu_available {1 if check_gpu_availability() else 0}")
     metrics.append(f"cache_available {1 if redis_client else 0}")
     

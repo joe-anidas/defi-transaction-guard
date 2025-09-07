@@ -3,7 +3,7 @@
 > **An AI-powered DeFi firewall built on BlockDAG that screens and blocks malicious transactions in real-time — secured by BDAG staking, powered by GoFr APIs, and accelerated on Akash GPUs.**
 
 [![DeFi Transaction Guard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)](https://github.com/joe-anidas/defi-transaction-guard)
-[![AI Integration](https://img.shields.io/badge/AI-Groq%20%2B%20Gemini-blue)](https://groq.com)
+[![AI Integration](https://img.shields.io/badge/AI-Gemini%202.0%20Flash-blue)](https://ai.google.dev)
 [![Blockchain](https://img.shields.io/badge/Blockchain-BlockDAG-purple)](https://blockdag.network)
 [![Framework](https://img.shields.io/badge/Backend-GoFr-orange)](https://gofr.dev)
 [![Deployment](https://img.shields.io/badge/Deployment-Akash%20Network-cyan)](https://akash.network)
@@ -169,8 +169,10 @@ BLOCKDAG_NODE_URL=https://rpc.blockdag.network
 BLOCKDAG_API_KEY=your_blockdag_api_key_here
 BLOCKDAG_NETWORK_ID=mainnet
 
-# Blockchain Integration
-BLOCKCHAIN_RPC_URL=https://rpc.ankr.com/eth
+# BlockDAG Network Integration
+BLOCKCHAIN_RPC_URL=https://rpc.primordial.bdagscan.com
+BLOCKDAG_NODE_URL=https://rpc.primordial.bdagscan.com
+BLOCKDAG_NETWORK_ID=1043
 PRIVATE_KEY=your_private_key_here
 
 # Logging
@@ -393,10 +395,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- **Live Demo**: [DeFi Transaction Guard Dashboard](https://your-demo-url.com)
-- **Documentation**: [Full Documentation](https://docs.your-project.com)
-- **API Reference**: [API Documentation](https://api.your-project.com)
-- **Smart Contracts**: [Contract Addresses](https://explorer.blockdag.network)
+- **Live Demo**: [DeFi Transaction Guard Dashboard](http://localhost:5173)
+- **BlockDAG Network**: [BlockDAG Testnet Explorer](https://primordial.bdagscan.com)
+- **API Reference**: [Backend API](http://localhost:8080/health)
+- **Smart Contracts**: [Contract Addresses](https://primordial.bdagscan.com)
 
 ---
 

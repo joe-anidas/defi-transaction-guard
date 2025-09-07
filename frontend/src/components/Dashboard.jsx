@@ -2,6 +2,7 @@ import { useTransaction } from '../context/TransactionContext'
 import StatsCard from './StatsCard'
 import ThreatFeed from './ThreatFeed'
 import SystemStatus from './SystemStatus'
+import WalletConnection from './WalletConnection'
 
 function Dashboard() {
   const { stats, recentBlocks } = useTransaction()
@@ -11,9 +12,7 @@ function Dashboard() {
       {/* Header */}
       <div className="mb-12 text-center">
         <div className="inline-flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <span className="text-2xl">🛡️</span>
-          </div>
+          
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             DeFi Transaction Guard
           </h1>
@@ -99,8 +98,9 @@ function Dashboard() {
         </div>
 
         {/* System Status */}
-        <div>
+        <div className="space-y-8">
           <SystemStatus />
+          <WalletConnection />
         </div>
       </div>
 

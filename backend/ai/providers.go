@@ -43,13 +43,6 @@ type AIAnalysisResult struct {
 	ProcessTime int64   `json:"processTime"`
 }
 
-// GroqProvider implements Groq AI analysis
-type GroqProvider struct {
-	APIKey     string
-	BackupKey  string
-	BaseURL    string
-	HTTPClient *http.Client
-}
 
 // GeminiProvider implements Gemini AI analysis
 type GeminiProvider struct {
@@ -59,57 +52,19 @@ type GeminiProvider struct {
 	HTTPClient *http.Client
 }
 
-// NewGroqProvider creates a new Groq AI provider
-func NewGroqProvider() *GroqProvider {
-	return &GroqProvider{
-		APIKey:    os.Getenv("GROQ_API_KEY"),
-		BackupKey: os.Getenv("GROQ_API_2"),
-		BaseURL:   "https://api.groq.com/openai/v1/chat/completions",
-		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-	}
-}
 
 // NewGeminiProvider creates a new Gemini AI provider
 func NewGeminiProvider() *GeminiProvider {
 	return &GeminiProvider{
 		APIKey:    os.Getenv("GEMINI_API_KEY"),
 		BackupKey: os.Getenv("GEMINI_API_2"),
-		BaseURL:   "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+		BaseURL:   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
 }
 
-// AnalyzeTransaction implements AI analysis using Groq
-func (g *GroqProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
-	startTime := time.Now()
-	
-	// Validate input data
-	if err := validateTransactionData(txData); err != nil {
-		return nil, fmt.Errorf("invalid transaction data: %w", err)
-	}
-	
-	prompt := g.buildAnalysisPrompt(txData)
-	
-	// Try primary API key first with retry logic
-	result, err := g.callGroqAPIWithRetry(g.APIKey, prompt)
-	if err != nil && g.BackupKey != "" {
-		// Fallback to backup key with retry logic
-		result, err = g.callGroqAPIWithRetry(g.BackupKey, prompt)
-	}
-	
-	if err != nil {
-		return nil, fmt.Errorf("groq analysis failed: %w", err)
-	}
-	
-	result.Provider = "groq"
-	result.ProcessTime = time.Since(startTime).Milliseconds()
-	
-	return result, nil
-}
 
 // AnalyzeTransaction implements AI analysis using Gemini
 func (g *GeminiProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysisResult, error) {
@@ -139,57 +94,16 @@ func (g *GeminiProvider) AnalyzeTransaction(txData TransactionData) (*AIAnalysis
 	return result, nil
 }
 
-// GetProviderName returns the provider name
-func (g *GroqProvider) GetProviderName() string {
-	return "groq"
-}
 
 func (g *GeminiProvider) GetProviderName() string {
 	return "gemini"
 }
 
-// IsAvailable checks if the provider is available
-func (g *GroqProvider) IsAvailable() bool {
-	return g.APIKey != ""
-}
 
 func (g *GeminiProvider) IsAvailable() bool {
 	return g.APIKey != ""
 }
 
-// buildAnalysisPrompt creates the AI prompt for transaction analysis
-func (g *GroqProvider) buildAnalysisPrompt(txData TransactionData) string {
-	return fmt.Sprintf(`Analyze this DeFi transaction for security risks and potential exploits:
-
-Transaction Details:
-- Hash: %s
-- From: %s
-- To: %s
-- Value: %s
-- Gas Limit: %s
-- Data: %s
-
-Please analyze for:
-1. Flash loan attack patterns
-2. Rug pull indicators
-3. Liquidity drain attempts
-4. Sandwich attack signatures
-5. Governance exploit patterns
-6. Unusual gas usage
-7. Suspicious contract interactions
-
-Respond with a JSON object containing:
-{
-  "riskScore": <0-100 integer>,
-  "threatType": "<specific threat type or 'Normal Transaction'>",
-  "confidence": <0.0-1.0 float>,
-  "reasoning": "<detailed explanation>",
-  "indicators": ["<list of risk indicators found>"]
-}
-
-Focus on actionable security insights. Risk score should be 0-30 for normal, 31-70 for suspicious, 71-100 for high risk.`, 
-		txData.Hash, txData.From, txData.To, txData.Value, txData.GasLimit, txData.Data)
-}
 
 func (g *GeminiProvider) buildAnalysisPrompt(txData TransactionData) string {
 	return fmt.Sprintf(`You are a DeFi security expert. Analyze this blockchain transaction for potential exploits and security risks:
@@ -226,73 +140,6 @@ Risk Scoring:
 		txData.Hash, txData.From, txData.To, txData.Value, txData.GasLimit, txData.Data)
 }
 
-// callGroqAPI makes the actual API call to Groq
-func (g *GroqProvider) callGroqAPI(apiKey, prompt string) (*AIAnalysisResult, error) {
-	requestBody := map[string]interface{}{
-		"model": "mixtral-8x7b-32768",
-		"messages": []map[string]string{
-			{
-				"role":    "system",
-				"content": "You are a DeFi security expert specializing in real-time exploit detection. Respond only with valid JSON.",
-			},
-			{
-				"role":    "user", 
-				"content": prompt,
-			},
-		},
-		"temperature":   0.1,
-		"max_tokens":    1000,
-		"response_format": map[string]string{"type": "json_object"},
-	}
-
-	jsonData, err := json.Marshal(requestBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", g.BaseURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	resp, err := g.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("API request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	var groqResponse struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&groqResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if len(groqResponse.Choices) == 0 {
-		return nil, fmt.Errorf("no response from Groq API")
-	}
-
-	// Parse the AI response JSON
-	var result AIAnalysisResult
-	if err := json.Unmarshal([]byte(groqResponse.Choices[0].Message.Content), &result); err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
-	}
-
-	return &result, nil
-}
 
 // callGeminiAPI makes the actual API call to Gemini
 func (g *GeminiProvider) callGeminiAPI(apiKey, prompt string) (*AIAnalysisResult, error) {
@@ -414,35 +261,6 @@ func isValidHash(hash string) bool {
 	return matched
 }
 
-// callGroqAPIWithRetry implements retry logic for Groq API calls
-func (g *GroqProvider) callGroqAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {
-	maxRetries := 3
-	baseDelay := 1 * time.Second
-	
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		result, err := g.callGroqAPI(apiKey, prompt)
-		if err == nil {
-			return result, nil
-		}
-		
-		// Check if error is retryable
-		if !isRetryableError(err) {
-			return nil, err
-		}
-		
-		if attempt < maxRetries-1 {
-			// Exponential backoff with jitter
-			delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
-			jitter := time.Duration(float64(delay) * 0.1 * (math.Floor(rand.Float64()*21) - 10)) // ±10% jitter
-			delay += jitter
-			
-			log.Printf("Retrying Groq API call in %v (attempt %d/%d)", delay, attempt+1, maxRetries)
-			time.Sleep(delay)
-		}
-	}
-	
-	return nil, fmt.Errorf("Groq API failed after %d attempts", maxRetries)
-}
 
 // callGeminiAPIWithRetry implements retry logic for Gemini API calls
 func (g *GeminiProvider) callGeminiAPIWithRetry(apiKey, prompt string) (*AIAnalysisResult, error) {

@@ -107,6 +107,17 @@ func main() {
 	os.Setenv("METRICS_PORT", "9090")
 	os.Setenv("AI_SERVICE_URL", "http://localhost:5002")
 	
+	// Set BlockDAG network configuration
+	if os.Getenv("BLOCKDAG_NODE_URL") == "" {
+		os.Setenv("BLOCKDAG_NODE_URL", "https://rpc.primordial.bdagscan.com")
+	}
+	if os.Getenv("BLOCKDAG_NETWORK_ID") == "" {
+		os.Setenv("BLOCKDAG_NETWORK_ID", "1043")
+	}
+	if os.Getenv("BLOCKCHAIN_RPC_URL") == "" {
+		os.Setenv("BLOCKCHAIN_RPC_URL", "https://rpc.primordial.bdagscan.com")
+	}
+	
 	app := gofr.New()
 
 	// Health check endpoint

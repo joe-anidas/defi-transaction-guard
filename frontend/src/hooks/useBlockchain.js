@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
+import {
+  BrowserProvider,
+  formatEther,
+  parseEther,
+  parseUnits,
+} from 'ethers';
+
 import {
   loadContractAddresses,
   createContractInstances,
   formatAddress,
-  formatEther,
-  parseEther,
-  isNetworkSupported,
   DEFAULT_ADDRESSES
 } from '../services/contracts'
 
@@ -14,6 +17,7 @@ export const useBlockchain = () => {
   const [provider, setProvider] = useState(null)
   const [signer, setSigner] = useState(null)
   const [account, setAccount] = useState('')
+  const [balance, setBalance] = useState('0')
   const [contracts, setContracts] = useState({})
   const [isConnected, setIsConnected] = useState(false)
   const [chainId, setChainId] = useState(null)
@@ -26,6 +30,35 @@ export const useBlockchain = () => {
     initializeProvider()
     loadAddresses()
   }, [])
+
+  // Live balance polling when connected
+  useEffect(() => {
+    let balanceInterval = null
+    
+    const updateBalance = async () => {
+      if (isConnected && account && provider) {
+        try {
+          const bal = await provider.getBalance(account)
+          setBalance(formatEther(bal))
+        } catch (error) {
+          console.error('Error fetching balance:', error)
+        }
+      }
+    }
+
+    if (isConnected && account) {
+      updateBalance() // Initial fetch
+      balanceInterval = setInterval(updateBalance, 5000) // Update every 5 seconds
+    } else {
+      setBalance('0')
+    }
+
+    return () => {
+      if (balanceInterval) {
+        clearInterval(balanceInterval)
+      }
+    }
+  }, [isConnected, account, provider])
 
   const loadAddresses = async () => {
     try {
@@ -40,22 +73,16 @@ export const useBlockchain = () => {
   const initializeProvider = async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
-        const web3Provider = new ethers.providers.Web3Provider(window.ethereum)
+        const web3Provider = new BrowserProvider(window.ethereum)
         setProvider(web3Provider)
 
         // Get network info
         const network = await web3Provider.getNetwork()
-        setChainId(network.chainId)
+        setChainId(Number(network.chainId))
 
-        // Check if already connected
-        const accounts = await web3Provider.listAccounts()
-        if (accounts.length > 0) {
-          const signer = web3Provider.getSigner()
-          setSigner(signer)
-          setAccount(accounts[0])
-          setIsConnected(true)
-          await initializeContracts(signer)
-        }
+        // Do not auto-connect on page load; require explicit user action
+        // const accounts = await web3Provider.listAccounts()
+        // if (accounts.length > 0) { ... }
 
         // Listen for account changes
         window.ethereum.on('accountsChanged', handleAccountsChanged)
@@ -81,58 +108,90 @@ export const useBlockchain = () => {
       setIsLoading(false)
     }
   }
-
-  const connectWallet = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      if (!provider) {
-        throw new Error('No Web3 provider available. Please install MetaMask.')
-      }
-
-      // For demo purposes, allow connection on any network
-      // In production, you'd want to enforce specific networks
-      const network = await provider.getNetwork()
-      console.log(`Connected to network: ${network.chainId}`)
-      
-      if (!isNetworkSupported(network.chainId)) {
-        console.warn(`Network ${network.chainId} not officially supported, but continuing for demo...`)
-        // You could add network switching logic here if needed
-      }
-
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const signer = provider.getSigner()
-      const address = await signer.getAddress()
-      
-      setSigner(signer)
-      setAccount(address)
-      setIsConnected(true)
-      
-      await initializeContracts(signer)
-      
-      return address
-    } catch (error) {
-      console.error('Error connecting wallet:', error)
-      setError(error.message)
-      throw error
-    } finally {
-      setIsLoading(false)
+const connectWallet = async () => {
+  try {
+    setIsLoading(true)
+    setError(null)
+    
+    if (!window.ethereum) {
+      setError('Install MetaMask')
+      return
     }
-  }   
+
+    // Request account access
+    await window.ethereum.request({ method: 'eth_requestAccounts' })
+
+    // Add/switch to BlockDAG network
+    await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: '0x413', // 1043 decimal
+        chainName: 'BlockDAG Primordial Testnet',
+        rpcUrls: ['https://rpc.primordial.bdagscan.com'],
+        nativeCurrency: {
+          name: 'BlockDAG Token',
+          symbol: 'BDAG',
+          decimals: 18,
+        },
+        blockExplorerUrls: ['https://primordial.bdagscan.com'],
+      }],
+    })
+
+    // Create provider and signer
+    const web3Provider = new BrowserProvider(window.ethereum)
+    const web3Signer = await web3Provider.getSigner()
+    const address = await web3Signer.getAddress()
+    const walletBalance = await web3Provider.getBalance(address)
+
+    // Update state
+    setProvider(web3Provider)
+    setSigner(web3Signer)
+    setAccount(address)
+    setBalance(formatEther(walletBalance))
+    setIsConnected(true)
+    setChainId(1043)
+
+    // Initialize contracts
+    await initializeContracts(web3Signer)
+
+    return address
+  } catch (err) {
+    console.error('Error connecting wallet:', err)
+    setError(err.message)
+    throw err
+  } finally {
+    setIsLoading(false)
+  }
+}
+
+
 
   const disconnectWallet = () => {
+    try {
+      if (typeof window !== 'undefined' && window.ethereum) {
+        // Remove listeners to avoid stale callbacks after disconnect
+        window.ethereum.removeListener && window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+        window.ethereum.removeListener && window.ethereum.removeListener('chainChanged', handleChainChanged)
+      }
+    } catch (e) {
+      // no-op
+    }
+    setProvider(null)
     setSigner(null)
     setAccount('')
+    setBalance('0')
     setIsConnected(false)
     setContracts({})
+    setError(null)
   }
 
   const handleAccountsChanged = (accounts) => {
     if (accounts.length === 0) {
+      // Stay disconnected until user explicitly reconnects
       disconnectWallet()
     } else {
       setAccount(accounts[0])
+      setIsConnected(true)
     }
   }
 
@@ -145,14 +204,14 @@ export const useBlockchain = () => {
   const getFirewallStats = async () => {
     try {
       if (!contracts.transactionGuard) return null
-      
+
       const stats = await contracts.transactionGuard.getFirewallStats()
       return {
         transactionsScreened: stats[0].toNumber(),
         exploitsBlocked: stats[1].toNumber(),
         fundsProtected: stats[2].toNumber(),
         activeValidators: stats[3].toNumber(),
-        totalStaked: ethers.utils.formatEther(stats[4])
+        totalStaked: formatEther(stats[4])
       }
     } catch (error) {
       console.error('Error getting firewall stats:', error)
@@ -161,35 +220,24 @@ export const useBlockchain = () => {
   }
 
   const getBDAGBalance = async (address = account) => {
+    if (!provider || !address) return '0'
     try {
-      if (!address) return '0'
-      // Prefer ERC20 balance only if contract is actually deployed on current network
-      if (contracts.bdagToken && addresses.bdagToken && provider) {
-        const code = await provider.getCode(addresses.bdagToken)
-        if (code && code !== '0x') {
-          const erc20Bal = await contracts.bdagToken.balanceOf(address)
-          return ethers.utils.formatEther(erc20Bal)
-        }
-      }
-      // Fallback: show native balance on BlockDAG (BDAG) or any EVM chain
-      if (provider) {
-        const wei = await provider.getBalance(address)
-        return ethers.utils.formatEther(wei)
-      }
-      return '0'
+      const wei = await provider.getBalance(address)
+      return formatEther(wei)
     } catch (error) {
-      console.error('Error getting BDAG balance:', error)
+      console.error('Error getting native BDAG balance:', error)
       return '0'
     }
   }
 
+
   const requestBDAGFromFaucet = async (amount = '1000') => {
     try {
       if (!contracts.bdagToken) throw new Error('BDAG contract not available')
-      
-      const tx = await contracts.bdagToken.faucet(account, ethers.utils.parseEther(amount))
+
+      const tx = await contracts.bdagToken.faucet(account, parseEther(amount))
       await tx.wait()
-      
+
       return tx.hash
     } catch (error) {
       console.error('Error requesting BDAG from faucet:', error)
@@ -200,22 +248,22 @@ export const useBlockchain = () => {
   const simulateMaliciousTransaction = async (type = 'drainLiquidity') => {
     try {
       if (!contracts.maliciousContract) throw new Error('Malicious contract not available')
-      
+
       let tx
       switch (type) {
         case 'drainLiquidity':
-          tx = await contracts.maliciousContract.drainLiquidity(account, ethers.utils.parseEther('500'))
+          tx = await contracts.maliciousContract.drainLiquidity(account, parseEther('500'))
           break
         case 'rugPull':
           tx = await contracts.maliciousContract.rugPull()
           break
         case 'sandwichAttack':
-          tx = await contracts.maliciousContract.sandwichAttack(account, ethers.utils.parseEther('100'))
+          tx = await contracts.maliciousContract.sandwichAttack(account, parseEther('100'))
           break
         default:
           throw new Error('Unknown attack type')
       }
-      
+
       // Re-send with low-fee overrides if needed
       return await sendWithLowFee(async (overrides) => {
         const populated = await tx.wait(0).then(() => tx).catch(() => tx)
@@ -238,14 +286,14 @@ export const useBlockchain = () => {
   const submitRiskAssessment = async (txHash, riskScore, threatType) => {
     try {
       if (!contracts.transactionGuard) throw new Error('Transaction Guard not available')
-      
+
       const tx = await contracts.transactionGuard.submitRiskAssessment(
         txHash,
         riskScore,
         threatType
       )
       await tx.wait()
-      
+
       return tx.hash
     } catch (error) {
       console.error('Error submitting risk assessment:', error)
@@ -258,20 +306,20 @@ export const useBlockchain = () => {
       if (!contracts.transactionGuard || !contracts.bdagToken) {
         throw new Error('Contracts not available')
       }
-      
+
       // First approve the transaction guard to spend BDAG
       const approveTx = await contracts.bdagToken.approve(
         addresses.transactionGuard,
-        ethers.utils.parseEther(amount)
+        parseEther(amount)
       )
       await approveTx.wait()
-      
+
       // Then stake
       const stakeTx = await contracts.transactionGuard.stakeAsValidator(
-        ethers.utils.parseEther(amount)
+        parseEther(amount)
       )
       await stakeTx.wait()
-      
+
       return stakeTx.hash
     } catch (error) {
       console.error('Error staking as validator:', error)
@@ -291,14 +339,14 @@ export const useBlockchain = () => {
         // BlockDAG testnet: aim for lower max fee; units are wei
         // Note: cannot force "1 BDAG" exact; gas is gasPrice * gasUsed.
         // We set a low gasPrice and rely on network acceptance.
-        const lowGwei = ethers.utils.parseUnits('1', 'gwei')
+        const lowGwei = parseUnits('1', 'gwei')
         overrides.maxFeePerGas = lowGwei
-        overrides.maxPriorityFeePerGas = ethers.utils.parseUnits('0.2', 'gwei')
+        overrides.maxPriorityFeePerGas = parseUnits('0.2', 'gwei')
       } else if (net.chainId === 11155111) {
         // Sepolia: target ~0.01 ETH typical cap by lowering per-gas cost
-        const lowGwei = ethers.utils.parseUnits('2', 'gwei')
+        const lowGwei = parseUnits('2', 'gwei')
         overrides.maxFeePerGas = lowGwei
-        overrides.maxPriorityFeePerGas = ethers.utils.parseUnits('0.5', 'gwei')
+        overrides.maxPriorityFeePerGas = parseUnits('0.5', 'gwei')
       } else if (feeData.maxFeePerGas) {
         // Generic gentle reduction
         overrides.maxFeePerGas = feeData.maxFeePerGas.div(2)
@@ -330,7 +378,7 @@ export const useBlockchain = () => {
       callback({
         type: 'ExploitPrevented',
         target,
-        potentialLoss: ethers.utils.formatEther(potentialLoss),
+        potentialLoss: formatEther(potentialLoss),
         blockNumber: event.blockNumber
       })
     })
@@ -379,6 +427,17 @@ export const useBlockchain = () => {
           decimals: 18
         }
       },
+      1043: {
+        chainId: '0x413',
+        chainName: 'BlockDAG Primordial Testnet',
+        rpcUrls: ['https://rpc.primordial.bdagscan.com'],
+        blockExplorerUrls: ['https://primordial.bdagscan.com'],
+        nativeCurrency: {
+          name: 'BlockDAG Token',
+          symbol: 'BDAG',
+          decimals: 18
+        }
+      },
       19648: {
         chainId: '0x4cc0',
         chainName: 'BlockDAG Testnet',
@@ -410,15 +469,20 @@ export const useBlockchain = () => {
     provider,
     signer,
     account,
+    balance,
     contracts,
     isConnected,
     chainId,
-    
+    isLoading,
+    error,
+    addresses,
+
     // Actions
     connectWallet,
     disconnectWallet,
     switchNetwork,
-    
+    loadAddresses,
+
     // Contract interactions
     getFirewallStats,
     getBDAGBalance,
@@ -427,18 +491,10 @@ export const useBlockchain = () => {
     submitRiskAssessment,
     stakeAsValidator,
     listenForEvents,
-    
-    // State
-    isLoading,
-    error,
-    addresses,
-    
+
     // Utilities
     formatAddress,
     formatEther,
     parseEther,
-    
-    // Actions
-    loadAddresses
   }
 }
