@@ -29,6 +29,8 @@ export const useBlockchain = () => {
   useEffect(() => {
     initializeProvider()
     loadAddresses()
+    // Check for previous wallet connection on mount
+    checkPreviousConnection()
   }, [])
 
   // Live balance polling when connected
@@ -80,10 +82,6 @@ export const useBlockchain = () => {
         const network = await web3Provider.getNetwork()
         setChainId(Number(network.chainId))
 
-        // Do not auto-connect on page load; require explicit user action
-        // const accounts = await web3Provider.listAccounts()
-        // if (accounts.length > 0) { ... }
-
         // Listen for account changes
         window.ethereum.on('accountsChanged', handleAccountsChanged)
         window.ethereum.on('chainChanged', handleChainChanged)
@@ -92,6 +90,34 @@ export const useBlockchain = () => {
       }
     } catch (error) {
       console.error('Error initializing provider:', error)
+    }
+  }
+
+  // Check for previous wallet connection on app load
+  const checkPreviousConnection = async () => {
+    try {
+      const wasConnected = localStorage.getItem('walletConnected')
+      const savedAddress = localStorage.getItem('walletAddress')
+      
+      if (wasConnected === 'true' && window.ethereum && savedAddress) {
+        // Check if MetaMask still has accounts connected
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+        
+        if (accounts.length > 0 && accounts[0].toLowerCase() === savedAddress.toLowerCase()) {
+          // Auto-reconnect if the same account is still connected in MetaMask
+          console.log('Auto-reconnecting to previously connected wallet...')
+          await connectWallet()
+        } else {
+          // Clear stale connection data
+          localStorage.removeItem('walletConnected')
+          localStorage.removeItem('walletAddress')
+        }
+      }
+    } catch (error) {
+      console.error('Error checking previous connection:', error)
+      // Clear potentially corrupted data
+      localStorage.removeItem('walletConnected')
+      localStorage.removeItem('walletAddress')
     }
   }
 
@@ -151,6 +177,10 @@ const connectWallet = async () => {
     setIsConnected(true)
     setChainId(1043)
 
+    // Store wallet connection in localStorage for persistence
+    localStorage.setItem('walletConnected', 'true')
+    localStorage.setItem('walletAddress', address)
+
     // Initialize contracts
     await initializeContracts(web3Signer)
 
@@ -176,6 +206,11 @@ const connectWallet = async () => {
     } catch (e) {
       // no-op
     }
+    
+    // Clear localStorage
+    localStorage.removeItem('walletConnected')
+    localStorage.removeItem('walletAddress')
+    
     setProvider(null)
     setSigner(null)
     setAccount('')
@@ -190,14 +225,55 @@ const connectWallet = async () => {
       // Stay disconnected until user explicitly reconnects
       disconnectWallet()
     } else {
-      setAccount(accounts[0])
+      const newAccount = accounts[0]
+      setAccount(newAccount)
       setIsConnected(true)
+      
+      // Update localStorage with new account
+      localStorage.setItem('walletConnected', 'true')
+      localStorage.setItem('walletAddress', newAccount)
+      
+      // Update balance for new account
+      if (provider) {
+        provider.getBalance(newAccount).then(balance => {
+          setBalance(formatEther(balance))
+        }).catch(console.error)
+      }
     }
   }
 
-  const handleChainChanged = (chainId) => {
-    setChainId(parseInt(chainId, 16))
-    window.location.reload() // Reload to reset state
+  const handleChainChanged = async (chainId) => {
+    const newChainId = parseInt(chainId, 16)
+    setChainId(newChainId)
+    
+    // If connected and chain changed, try to reconnect to maintain state
+    if (isConnected && window.ethereum) {
+      try {
+        console.log('Chain changed, reconnecting...')
+        // Small delay to let MetaMask settle
+        setTimeout(async () => {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+          if (accounts.length > 0) {
+            // Refresh connection without full page reload
+            const web3Provider = new BrowserProvider(window.ethereum)
+            const web3Signer = await web3Provider.getSigner()
+            const address = await web3Signer.getAddress()
+            const walletBalance = await web3Provider.getBalance(address)
+
+            setProvider(web3Provider)
+            setSigner(web3Signer)
+            setAccount(address)
+            setBalance(formatEther(walletBalance))
+            
+            // Reinitialize contracts on new chain
+            await initializeContracts(web3Signer)
+          }
+        }, 100)
+      } catch (error) {
+        console.error('Error handling chain change:', error)
+        setError('Chain change failed - please reconnect manually')
+      }
+    }
   }
 
   // Contract interaction functions
@@ -251,31 +327,64 @@ const connectWallet = async () => {
     }
   }
 
-  const simulateMaliciousTransaction = async (type = 'drainLiquidity', amount = '500', gasLimit = '500000') => {
+  const simulateMaliciousTransaction = async (type = 'drainLiquidity', amount = '0.0005', gasLimit = '21000') => {
     try {
-      if (!contracts.transactionGuard || !contracts.maliciousContract) {
-        throw new Error('Required contract not available');
+      let parsedAmount = parseEther(amount.toString());
+      let parsedGasLimit = gasLimit ? Math.max(parseInt(gasLimit), 21000) : 21000;
+      
+      // Check if contracts are available
+      if (!contracts.transactionGuard || addresses.transactionGuard === "0x0000000000000000000000000000000000000000") {
+        console.log('Transaction Guard contract not available, simulating with direct transaction...');
+        
+        // Fallback: Create a suspicious transaction that would be flagged
+        const suspiciousRecipient = "0x1234567890abcdef1234567890abcdef12345678"; // Known malicious address
+        const tx = await signer.sendTransaction({
+          to: suspiciousRecipient,
+          value: parsedAmount,
+          gasLimit: parsedGasLimit,
+          data: "0xdeadbeef" // Suspicious data
+        });
+        
+        console.log('Simulated malicious transaction:', tx.hash);
+        // This should trigger our AI analysis to flag it as malicious
+        return tx;
       }
 
-      let target = contracts.maliciousContract.address;
+      let target = contracts.maliciousContract?.address || "0x1234567890abcdef1234567890abcdef12345678";
       let data;
-      let parsedAmount = parseEther(amount.toString());
-      let parsedGasLimit = gasLimit ? parseInt(gasLimit) : 500000;
       
       switch (type) {
         case 'drainLiquidity':
-          data = contracts.maliciousContract.interface.encodeFunctionData('drainLiquidity', [account, parsedAmount]);
+          if (contracts.maliciousContract) {
+            data = contracts.maliciousContract.interface.encodeFunctionData('drainLiquidity', [account, parsedAmount]);
+          } else {
+            data = "0xdeadbeef"; // Suspicious data pattern
+          }
           break;
         case 'rugPull':
-          data = contracts.maliciousContract.interface.encodeFunctionData('rugPull');
+          if (contracts.maliciousContract) {
+            data = contracts.maliciousContract.interface.encodeFunctionData('rugPull');
+          } else {
+            data = "0xrugpull"; // Suspicious data pattern
+          }
           break;
         case 'sandwichAttack':
-          data = contracts.maliciousContract.interface.encodeFunctionData('sandwichAttack', [account, parsedAmount]);
+          if (contracts.maliciousContract) {
+            data = contracts.maliciousContract.interface.encodeFunctionData('sandwichAttack', [account, parsedAmount]);
+          } else {
+            data = "0xsandwich"; // Suspicious data pattern
+          }
           break;
         case 'transfer':
-          // For good transactions, do a simple BDAG token transfer or faucet request
-          if (!contracts.bdagToken) {
-            throw new Error('BDAG token contract not available');
+          // For good transactions, handle missing contracts gracefully
+          if (!contracts.bdagToken || addresses.bdagToken === "0x0000000000000000000000000000000000000000") {
+            console.log('BDAG contract not available, using native transfer...');
+            const tx = await signer.sendTransaction({
+              to: account, // Send to self for demo
+              value: parsedAmount,
+              gasLimit: parsedGasLimit
+            });
+            return tx;
           }
           
           // Check if we have enough balance, if not, request from faucet first
@@ -289,13 +398,18 @@ const connectWallet = async () => {
               return await contracts.bdagToken.faucet(account, requiredAmount, { gasLimit: parsedGasLimit });
             } else {
               // Transfer to a different address (using contract address as recipient for demo)
-              const recipientAddress = contracts.transactionGuard.address;
+              const recipientAddress = contracts.transactionGuard?.address || account;
               return await contracts.bdagToken.transfer(recipientAddress, parsedAmount, { gasLimit: parsedGasLimit });
             }
           } catch (balanceError) {
-            // Fallback to faucet request if balance check fails
-            console.log('Balance check failed, requesting from faucet...', balanceError);
-            return await contracts.bdagToken.faucet(account, parsedAmount, { gasLimit: parsedGasLimit });
+            // Fallback to native transaction if balance check fails
+            console.log('Balance check failed, using native transaction...', balanceError);
+            const tx = await signer.sendTransaction({
+              to: account,
+              value: parsedAmount,
+              gasLimit: parsedGasLimit
+            });
+            return tx;
           }
         default:
           throw new Error('Unknown attack type');
@@ -509,44 +623,69 @@ const connectWallet = async () => {
   }
 
   // Dedicated function for good transactions that opens MetaMask
-  const executeGoodTransaction = async (amount = '500', gasLimit = '500000') => {
+  const executeGoodTransaction = async (amount = '0.0005', gasLimit = '21000') => {
     try {
       if (!signer) {
         throw new Error('Wallet not connected');
       }
 
-      if (!contracts.bdagToken) {
-        throw new Error('BDAG token contract not available');
-      }
-
       const parsedAmount = parseEther(amount.toString());
-      const parsedGasLimit = gasLimit ? parseInt(gasLimit) : 500000;
+      const parsedGasLimit = gasLimit ? Math.max(parseInt(gasLimit), 21000) : 21000;
 
       console.log('Executing good transaction:', { amount, gasLimit: parsedGasLimit });
 
-      // Check balance first
-      const balance = await contracts.bdagToken.balanceOf(account);
-      console.log('Current balance:', formatEther(balance), 'BDAG');
-      console.log('Required amount:', amount, 'BDAG');
-
-      if (balance.lt(parsedAmount)) {
-        // Request tokens from faucet first
-        console.log('Insufficient balance, requesting from faucet...');
-        const faucetTx = await contracts.bdagToken.faucet(account, parsedAmount, { 
-          gasLimit: parsedGasLimit 
-        });
-        console.log('Faucet transaction submitted:', faucetTx.hash);
-        return faucetTx;
-      } else {
-        // Transfer to a different address (using a demo recipient)
-        const recipientAddress = contracts.transactionGuard.address;
-        console.log('Transferring to:', recipientAddress);
+      // Check if BDAG token contract is available and valid
+      if (!contracts.bdagToken || addresses.bdagToken === "0x0000000000000000000000000000000000000000") {
+        console.log('BDAG contract not available, using native BDAG transfer...');
         
-        const transferTx = await contracts.bdagToken.transfer(recipientAddress, parsedAmount, { 
-          gasLimit: parsedGasLimit 
+        // Fallback: Send native BDAG transaction
+        const tx = await signer.sendTransaction({
+          to: account, // Send to self for demo
+          value: parsedAmount,
+          gasLimit: parsedGasLimit
         });
-        console.log('Transfer transaction submitted:', transferTx.hash);
-        return transferTx;
+        
+        console.log('Native BDAG transaction submitted:', tx.hash);
+        return tx;
+      }
+
+      // Check balance first with proper error handling
+      try {
+        const balance = await contracts.bdagToken.balanceOf(account);
+        console.log('Current balance:', formatEther(balance), 'BDAG');
+        console.log('Required amount:', amount, 'BDAG');
+
+        if (balance.lt(parsedAmount)) {
+          // Request tokens from faucet first
+          console.log('Insufficient balance, requesting from faucet...');
+          const faucetTx = await contracts.bdagToken.faucet(account, parsedAmount, { 
+            gasLimit: parsedGasLimit 
+          });
+          console.log('Faucet transaction submitted:', faucetTx.hash);
+          return faucetTx;
+        } else {
+          // Transfer to a different address (using a demo recipient)
+          const recipientAddress = contracts.transactionGuard?.address || account;
+          console.log('Transferring to:', recipientAddress);
+          
+          const transferTx = await contracts.bdagToken.transfer(recipientAddress, parsedAmount, { 
+            gasLimit: parsedGasLimit 
+          });
+          console.log('Transfer transaction submitted:', transferTx.hash);
+          return transferTx;
+        }
+      } catch (balanceError) {
+        console.warn('Balance check failed, falling back to native transaction:', balanceError);
+        
+        // Fallback: Send native BDAG transaction
+        const tx = await signer.sendTransaction({
+          to: account, // Send to self for demo
+          value: parsedAmount,
+          gasLimit: parsedGasLimit
+        });
+        
+        console.log('Fallback native transaction submitted:', tx.hash);
+        return tx;
       }
     } catch (error) {
       console.error('Good transaction failed:', error);

@@ -22,8 +22,8 @@ function Demo() {
   } = useBlockchain()
   
   const [selectedContract, setSelectedContract] = useState('')
-  const [dagAmount, setDagAmount] = useState('500')
-  const [gasLimit, setGasLimit] = useState('500000')
+  const [dagAmount, setDagAmount] = useState('0.0005')
+  const [gasLimit, setGasLimit] = useState('21000')
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingTransactionType, setPendingTransactionType] = useState(null) // 'good' or 'malicious'
 
@@ -52,7 +52,11 @@ function Demo() {
       description: 'MEV sandwich attack vector',
       attackType: 'sandwichAttack'
     }
-  ]
+  ].filter(contract => 
+    contract.address && 
+    contract.address !== "0x0000000000000000000000000000000000000000" &&
+    contract.address !== "0x0"
+  )
 
   const handleConnect = async () => {
     try {
@@ -94,7 +98,7 @@ function Demo() {
 
     try {
       // USE REAL GEMINI AI ANALYSIS with RANDOM VARIATIONS to prove it's dynamic
-      const randomAmount = (Math.random() * 1000 + 100).toFixed(0) // Random amount 100-1100
+      const randomAmount = (Math.random() * 0.001 + 0.0001).toFixed(4) // Random amount 0.0001-0.0011
       const randomGas = (Math.random() * 100000 + 21000).toFixed(0) // Random gas 21000-121000
       
       console.log('🧪 Testing REAL Gemini AI with random inputs:', { 
@@ -153,34 +157,9 @@ function Demo() {
       console.log('Account:', account)
       console.log('Available contracts:', Object.keys(contracts))
       console.log('BDAG Token contract:', contracts.bdagToken)
-      console.log('Executing good transaction with:', { dagAmount, gasLimit })
+      console.log('Executing good transaction with user inputs:', { dagAmount, gasLimit })
       
-      // Try a simple MetaMask transaction first
-      if (window.ethereum) {
-        console.log('Attempting direct MetaMask transaction...')
-        const result = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: account,
-            to: account, // Send to self for testing
-            value: '0x0', // 0 ETH
-            gas: '0x5208', // 21000 gas
-          }],
-        })
-        
-        console.log('Direct transaction result:', result)
-        
-        setCurrentTransaction(prev => ({
-          ...prev,
-          hash: result,
-          status: 'pending',
-          reason: 'Transaction submitted successfully!'
-        }))
-        
-        return
-      }
-      
-      // Fallback to contract method
+      // Execute the actual BDAG transaction with user's input values
       const result = await executeGoodTransaction(dagAmount, gasLimit)
       
       console.log('Transaction result:', result)
@@ -311,6 +290,8 @@ function Demo() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+     
+
         {/* Left Side - Wallet & Transaction */}
         <div className="space-y-6">
           {/* Wallet Status */}
@@ -415,30 +396,41 @@ function Demo() {
               Click a contract to test malicious transaction blocking, or leave none selected for safe transactions.
             </p>
             <div className="space-y-3">
-              {maliciousContracts.map((contract) => (
-                <div
-                  key={contract.address}
-                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    selectedContract === contract.address
-                      ? 'border-blue-500 bg-blue-900/20'
-                      : 'border-gray-600 bg-gray-900 hover:border-gray-500'
-                  }`}
-                  onClick={() => setSelectedContract(selectedContract === contract.address ? '' : contract.address)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{contract.name}</span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(contract.risk)}`}>
-                      {contract.risk}
-                    </span>
+              {maliciousContracts.length > 0 ? (
+                maliciousContracts.map((contract, index) => (
+                  <div
+                    key={`${contract.address}-${contract.attackType}-${index}`}
+                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                      selectedContract === contract.address
+                        ? 'border-blue-500 bg-blue-900/20'
+                        : 'border-gray-600 bg-gray-900 hover:border-gray-500'
+                    }`}
+                    onClick={() => setSelectedContract(selectedContract === contract.address ? '' : contract.address)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{contract.name}</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(contract.risk)}`}>
+                        {contract.risk}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-400 mb-1">
+                      {contract.address}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {contract.description}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-400 mb-1">
-                    {contract.address}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {contract.description}
+                ))
+              ) : (
+                <div className="p-4 rounded-lg border border-gray-600 bg-gray-900">
+                  <div className="text-center text-gray-400">
+                    <div className="animate-pulse">Loading contracts...</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Waiting for smart contracts to load
+                    </div>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
             
             {/* Clear Selection Button */}
@@ -488,27 +480,42 @@ function Demo() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span>Amount:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
-                      value={dagAmount}
-                      onChange={e => setDagAmount(e.target.value)}
-                      placeholder="BDAG"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
+                        value={dagAmount}
+                        onChange={e => setDagAmount(e.target.value)}
+                        placeholder="BDAG"
+                      />
+                      <span className="text-gray-400 text-sm">BDAG</span>
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Gas Limit:</span>
-                    <input
-                      type="number"
-                      min="21000"
-                      step="1000"
-                      className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
-                      value={gasLimit}
-                      onChange={e => setGasLimit(e.target.value)}
-                      placeholder="Gas Limit"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="21000"
+                        step="1000"
+                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
+                        value={gasLimit}
+                        onChange={e => {
+                          const value = parseInt(e.target.value) || 21000;
+                          setGasLimit(Math.max(value, 21000).toString());
+                        }}
+                        placeholder="Gas Limit"
+                      />
+                      <span className="text-gray-400 text-sm">gas</span>
+                    </div>
+                  </div>
+                  
+                  {/* Debug Info */}
+                  <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-900/50 rounded">
+                    <div>Will transfer: <span className="text-white font-mono">{dagAmount}</span> BDAG</div>
+                    <div>Gas limit: <span className="text-white font-mono">{gasLimit}</span></div>
                   </div>
                   <div className="flex justify-between">
                     <span>Target Contract:</span>
@@ -584,13 +591,13 @@ function Demo() {
                       <span className="text-2xl">❌</span>
                       <div>
                         <h4 className="text-lg font-medium text-red-400">Without Transaction Guard</h4>
-                        <p className="text-sm text-red-300">Complete liquidity drain - All funds lost to exploit</p>
+                        <p className="text-sm text-red-300">Transaction executed - Funds lost to exploit</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-300">Loss:</div>
-                      <div className="text-red-400 font-bold text-xl">$50,000</div>
-                      <div className="text-red-400 text-sm">0 BDAG remaining</div>
+                      <div className="text-red-400 font-bold text-xl">{dagAmount} BDAG</div>
+                      <div className="text-red-400 text-sm">≈ ${(parseFloat(dagAmount) * 50000).toFixed(2)} USD</div>
                     </div>
                   </div>
                 </div>
@@ -610,6 +617,15 @@ function Demo() {
                       <div className="text-green-400 font-bold text-xl">$0</div>
                       <div className="text-green-400 text-sm">{displayBalance} BDAG safe</div>
                     </div>
+                  </div>
+                </div>
+                
+                {/* Savings Summary */}
+                <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-3">
+                  <div className="text-center">
+                    <div className="text-sm text-blue-300">Protected Value</div>
+                    <div className="text-blue-400 font-bold text-lg">{dagAmount} BDAG Saved</div>
+                    <div className="text-xs text-blue-300">100% protection rate achieved</div>
                   </div>
                 </div>
               </div>

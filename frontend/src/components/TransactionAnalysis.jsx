@@ -89,11 +89,44 @@ function TransactionAnalysis() {
 
       {(currentTransaction || isScanning) && (
         <div className="space-y-6">
-          {/* Transaction Hash */}
+          {/* Transaction Details */}
           <div className="bg-gray-900 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">Transaction Hash</div>
-            <div className="font-mono text-sm text-white">
-              {currentTransaction?.hash || 'Generating...'}
+            <div className="text-sm text-gray-400 mb-3">Transaction Details</div>
+            <div className="space-y-2">
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Hash</div>
+                <div className="font-mono text-sm text-white break-all leading-relaxed">
+                  {currentTransaction?.hash || 'Generating...'}
+                </div>
+              </div>
+              {currentTransaction?.from && (
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">From</div>
+                  <div className="font-mono text-sm text-white break-all leading-relaxed">
+                    {currentTransaction.from}
+                  </div>
+                </div>
+              )}
+              {currentTransaction?.to && (
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">To</div>
+                  <div className="font-mono text-sm text-white break-all leading-relaxed">
+                    {currentTransaction.to}
+                  </div>
+                </div>
+              )}
+              {currentTransaction?.value && (
+                <div className="flex justify-between">
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Value</div>
+                    <div className="text-sm text-white">{currentTransaction.value}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Gas Limit</div>
+                    <div className="text-sm text-white">{currentTransaction.gasLimit}</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -169,8 +202,9 @@ function TransactionAnalysis() {
           {currentTransaction && currentTransaction.status === 'pending' && (
             <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
               <div className="text-sm text-yellow-400 mb-1">⏳ Transaction Pending</div>
-              <div className="font-mono text-sm text-white">
-                Hash: {currentTransaction.hash}
+              <div className="font-mono text-sm text-white break-all">
+                <span className="text-gray-400">Hash: </span>
+                <span className="leading-relaxed">{currentTransaction.hash}</span>
               </div>
               <div className="text-sm text-yellow-300 mt-2">
                 {currentTransaction.reason}
@@ -181,8 +215,9 @@ function TransactionAnalysis() {
           {currentTransaction && currentTransaction.status === 'completed' && (
             <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
               <div className="text-sm text-green-400 mb-1">✅ Transaction Completed</div>
-              <div className="font-mono text-sm text-white">
-                Hash: {currentTransaction.hash}
+              <div className="font-mono text-sm text-white break-all">
+                <span className="text-gray-400">Hash: </span>
+                <span className="leading-relaxed">{currentTransaction.hash}</span>
               </div>
               <div className="text-sm text-green-300 mt-2">
                 {currentTransaction.reason}

@@ -85,7 +85,7 @@ export const TransactionProvider = ({ children }) => {
   }
 
   // Static demo data - no API polling needed for demo
-  const simulateExploitAttempt = (amount = '1000', gasLimit = '500000', isMalicious = true, onAnalysisComplete = null) => {
+  const simulateExploitAttempt = (amount = '0.0005', gasLimit = '21000', isMalicious = true, onAnalysisComplete = null) => {
     setIsScanning(true)
     setCurrentTransaction({
       hash: '0x' + Math.random().toString(16).substr(2, 8),
