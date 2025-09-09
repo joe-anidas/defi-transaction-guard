@@ -569,6 +569,52 @@ function Demo() {
         {/* Right Side - Analysis */}
         <div>
           <TransactionAnalysis />
+          
+          {/* Impact Comparison - Below AI Analysis Engine */}
+          {currentTransaction?.status === 'blocked' && (
+            <div className="mt-6 bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold mb-6 text-center">🛡️ Impact Comparison</h3>
+              
+              {/* Row Layout */}
+              <div className="space-y-4">
+                {/* Without Guard Row */}
+                <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">❌</span>
+                      <div>
+                        <h4 className="text-lg font-medium text-red-400">Without Transaction Guard</h4>
+                        <p className="text-sm text-red-300">Complete liquidity drain - All funds lost to exploit</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-300">Loss:</div>
+                      <div className="text-red-400 font-bold text-xl">$50,000</div>
+                      <div className="text-red-400 text-sm">0 BDAG remaining</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* With Guard Row */}
+                <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">✅</span>
+                      <div>
+                        <h4 className="text-lg font-medium text-green-400">With Transaction Guard</h4>
+                        <p className="text-sm text-green-300">Transaction blocked - All funds completely safe</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-300">Loss:</div>
+                      <div className="text-green-400 font-bold text-xl">$0</div>
+                      <div className="text-green-400 text-sm">{displayBalance} BDAG safe</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -660,58 +706,6 @@ function Demo() {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Impact Comparison */}
-      {currentTransaction?.status === 'blocked' && (
-        <div className="mt-8 bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-semibold mb-6">Impact Comparison</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Without Guard */}
-            <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
-              <h4 className="text-lg font-medium text-red-400 mb-4">Without Transaction Guard</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Initial Balance:</span>
-                  <span className="text-white">1,000 BDAG</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>After Exploit:</span>
-                  <span className="text-red-400 font-bold">0 BDAG</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Loss:</span>
-                  <span className="text-red-400 font-bold">$50,000</span>
-                </div>
-                <div className="text-sm text-red-300 mt-4">
-                  ❌ Funds completely drained by liquidity exploit
-                </div>
-              </div>
-            </div>
-
-            {/* With Guard */}
-            <div className="bg-green-900/20 border border-green-500 rounded-lg p-6">
-              <h4 className="text-lg font-medium text-green-400 mb-4">With Transaction Guard</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Initial Balance:</span>
-                  <span className="text-white">{displayBalance} BDAG</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>After Protection:</span>
-                  <span className="text-green-400 font-bold">{displayBalance} BDAG</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Loss:</span>
-                  <span className="text-green-400 font-bold">$0</span>
-                </div>
-                <div className="text-sm text-green-300 mt-4">
-                  ✅ Transaction blocked - funds completely safe
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
