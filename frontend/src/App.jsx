@@ -25,7 +25,14 @@ function App() {
 
     document.addEventListener('dragstart', preventDrag)
     document.addEventListener('selectstart', preventScrollLock)
-    document.addEventListener('contextmenu', (e) => e.preventDefault())
+    
+    // Only prevent context menu on specific elements (images, etc.)
+    const preventContextMenu = (e) => {
+      if (e.target.tagName === 'IMG' || e.target.draggable) {
+        e.preventDefault()
+      }
+    }
+    document.addEventListener('contextmenu', preventContextMenu)
 
     // Smooth scrolling
     document.documentElement.style.scrollBehavior = 'smooth'
@@ -33,7 +40,7 @@ function App() {
     return () => {
       document.removeEventListener('dragstart', preventDrag)
       document.removeEventListener('selectstart', preventScrollLock)
-      document.removeEventListener('contextmenu', (e) => e.preventDefault())
+      document.removeEventListener('contextmenu', preventContextMenu)
     }
   }, [])
 

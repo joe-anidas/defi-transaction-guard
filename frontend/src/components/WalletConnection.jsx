@@ -112,8 +112,10 @@ function WalletConnection() {
         }
       }
 
-      const handleChainChanged = () => {
-        window.location.reload()
+      const handleChainChanged = (chainId) => {
+        // Instead of reloading, reconnect and fetch new data
+        console.log('Chain changed to:', chainId)
+        connectAndFetch()
       }
 
       window.ethereum.on('accountsChanged', handleAccountsChanged)
