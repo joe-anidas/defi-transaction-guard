@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTransaction } from '../context/TransactionContext'
-import { useBlockchain } from '../hooks/useBlockchain'
+import { useBlockchain } from '../context/BlockchainContext'
 import TransactionAnalysis from './TransactionAnalysis'
 import SetupStatus from './SetupStatus'
 import EnhancedNetworkStatus from './EnhancedNetworkStatus'
@@ -474,102 +474,126 @@ function Demo() {
           {/* Transaction Testing */}
           <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
             <h3 className="text-xl font-semibold mb-4">Transaction Testing</h3>
-            <div className="space-y-4">
-              <div className="p-4 bg-gray-900 rounded-lg">
-                <div className="text-sm text-gray-400 mb-2">Transaction Details</div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span>Amount:</span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
-                        value={dagAmount}
-                        onChange={e => setDagAmount(e.target.value)}
-                        placeholder="BDAG"
-                      />
-                      <span className="text-gray-400 text-sm">BDAG</span>
+            
+            {!isConnected ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-medium text-white mb-2">Connect Your Wallet</h4>
+                  <p className="text-gray-400 mb-4">
+                    You need to connect your wallet to test transactions and see the protection system in action.
+                  </p>
+                  <button
+                    onClick={handleConnect}
+                    disabled={isLoading}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg font-medium text-white transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Connecting...' : 'Connect Wallet'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-900 rounded-lg">
+                  <div className="text-sm text-gray-400 mb-2">Transaction Details</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span>Amount:</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
+                          value={dagAmount}
+                          onChange={e => setDagAmount(e.target.value)}
+                          placeholder="BDAG"
+                        />
+                        <span className="text-gray-400 text-sm">BDAG</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Gas Limit:</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="21000"
+                          step="1000"
+                          className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
+                          value={gasLimit}
+                          onChange={e => {
+                            const value = parseInt(e.target.value) || 21000;
+                            setGasLimit(Math.max(value, 21000).toString());
+                          }}
+                          placeholder="Gas Limit"
+                        />
+                        <span className="text-gray-400 text-sm">gas</span>
+                      </div>
+                    </div>
+                    
+                    {/* Debug Info */}
+                    <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-900/50 rounded">
+                      <div>Will transfer: <span className="text-white font-mono">{dagAmount}</span> BDAG</div>
+                      <div>Gas limit: <span className="text-white font-mono">{gasLimit}</span></div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Target Contract:</span>
+                      <span className="text-white font-mono text-xs">
+                        {selectedContract ? 
+                          maliciousContracts.find(c => c.address === selectedContract)?.name || 'Selected Contract'
+                          : 'None Selected'
+                        }
+                      </span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>Gas Limit:</span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="21000"
-                        step="1000"
-                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-32 text-right"
-                        value={gasLimit}
-                        onChange={e => {
-                          const value = parseInt(e.target.value) || 21000;
-                          setGasLimit(Math.max(value, 21000).toString());
-                        }}
-                        placeholder="Gas Limit"
-                      />
-                      <span className="text-gray-400 text-sm">gas</span>
-                    </div>
-                  </div>
+                </div>
+
+                {/* Smart Transaction Button */}
+                <div className="space-y-3">
+                  <button
+                    onClick={handleSmartTransaction}
+                    disabled={isScanning || !isConnected}
+                    className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
+                      isScanning || !isConnected
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : selectedContract
+                          ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transform hover:scale-105'
+                          : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white transform hover:scale-105'
+                    }`}
+                  >
+                    {!isConnected 
+                      ? 'Connect Wallet First' 
+                      : isScanning 
+                        ? 'Analyzing Transaction...' 
+                        : selectedContract
+                          ? `🚨 Execute Malicious Transaction (${maliciousContracts.find(c => c.address === selectedContract)?.name})`
+                          : '✅ Execute Good Transaction'
+                    }
+                  </button>
                   
-                  {/* Debug Info */}
-                  <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-900/50 rounded">
-                    <div>Will transfer: <span className="text-white font-mono">{dagAmount}</span> BDAG</div>
-                    <div>Gas limit: <span className="text-white font-mono">{gasLimit}</span></div>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Target Contract:</span>
-                    <span className="text-white font-mono text-xs">
-                      {selectedContract ? 
-                        maliciousContracts.find(c => c.address === selectedContract)?.name || 'Selected Contract'
-                        : 'None Selected'
-                      }
-                    </span>
+                  {/* Helper text to explain the logic */}
+                  <div className="text-xs text-gray-400 text-center">
+                    {selectedContract 
+                      ? 'Contract selected - will execute malicious transaction for testing'
+                      : 'No contract selected - will execute safe transaction'
+                    }
                   </div>
                 </div>
-              </div>
 
-              {/* Smart Transaction Button */}
-              <div className="space-y-3">
-                <button
-                  onClick={handleSmartTransaction}
-                  disabled={isScanning || !isConnected}
-                  className={`w-full py-3 px-6 rounded-lg font-medium transition-all ${
-                    isScanning || !isConnected
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : selectedContract
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transform hover:scale-105'
-                        : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white transform hover:scale-105'
-                  }`}
-                >
-                  {!isConnected 
-                    ? 'Connect Wallet First' 
-                    : isScanning 
-                      ? 'Analyzing Transaction...' 
-                      : selectedContract
-                        ? `🚨 Execute Malicious Transaction (${maliciousContracts.find(c => c.address === selectedContract)?.name})`
-                        : '✅ Execute Good Transaction'
-                  }
-                </button>
-                
-                {/* Helper text to explain the logic */}
-                <div className="text-xs text-gray-400 text-center">
-                  {selectedContract 
-                    ? 'Contract selected - will execute malicious transaction for testing'
-                    : 'No contract selected - will execute safe transaction'
-                  }
-                </div>
+                {currentTransaction && (
+                  <button
+                    onClick={resetDemo}
+                    className="w-full py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm transition-colors"
+                  >
+                    Reset Demo
+                  </button>
+                )}
               </div>
-
-              {currentTransaction && (
-                <button
-                  onClick={resetDemo}
-                  className="w-full py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm transition-colors"
-                >
-                  Reset Demo
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 

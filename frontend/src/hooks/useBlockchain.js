@@ -44,15 +44,22 @@ export const useBlockchain = () => {
           setBalance(formatEther(bal))
         } catch (error) {
           console.error('Error fetching balance:', error)
+          // On error, if we're supposed to be connected, keep trying
+          // But if we're disconnected, clear the balance
+          if (!isConnected) {
+            setBalance('0')
+          }
         }
       }
     }
 
-    if (isConnected && account) {
+    if (isConnected && account && provider) {
       updateBalance() // Initial fetch
       balanceInterval = setInterval(updateBalance, 5000) // Update every 5 seconds
     } else {
+      // Explicitly clear balance when not connected
       setBalance('0')
+      console.log('Balance cleared - wallet not connected')
     }
 
     return () => {
@@ -196,28 +203,52 @@ const connectWallet = async () => {
 
 
 
-  const disconnectWallet = () => {
+  const disconnectWallet = async () => {
+    console.log('Starting wallet disconnection...')
+    
     try {
       if (typeof window !== 'undefined' && window.ethereum) {
         // Remove listeners to avoid stale callbacks after disconnect
         window.ethereum.removeListener && window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
         window.ethereum.removeListener && window.ethereum.removeListener('chainChanged', handleChainChanged)
+        
+        // For some wallet providers, request disconnection if available
+        if (window.ethereum.disconnect) {
+          await window.ethereum.disconnect()
+        }
+        
+        // Clear any wallet connection permissions if available
+        if (window.ethereum.request) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_revokePermissions',
+              params: [{ eth_accounts: {} }]
+            })
+          } catch (revokeError) {
+            // Some wallets don't support this method, ignore the error
+            console.log('Wallet permission revocation not supported or failed:', revokeError.message)
+          }
+        }
       }
     } catch (e) {
-      // no-op
+      console.log('Error during wallet disconnection:', e.message)
     }
     
-    // Clear localStorage
+    // Clear localStorage first
     localStorage.removeItem('walletConnected')
     localStorage.removeItem('walletAddress')
     
+    // Force clear all state synchronously
+    setIsConnected(false)
     setProvider(null)
     setSigner(null)
     setAccount('')
     setBalance('0')
-    setIsConnected(false)
     setContracts({})
     setError(null)
+    setChainId(null)
+    
+    console.log('Wallet disconnection completed - all state cleared')
   }
 
   const handleAccountsChanged = (accounts) => {

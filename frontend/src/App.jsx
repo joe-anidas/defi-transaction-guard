@@ -7,6 +7,7 @@ import TechProof from './components/TechProof'
 import Navbar from './components/Navbar'
 import TroubleshootingGuide from './components/TroubleshootingGuide'
 import { TransactionProvider } from './context/TransactionContext'
+import { BlockchainProvider } from './context/BlockchainContext'
 
 function App() {
   useEffect(() => {
@@ -45,30 +46,32 @@ function App() {
   }, [])
 
   return (
-    <TransactionProvider>
-      <Router>
-        <div className="min-h-screen bg-black text-white overflow-x-hidden">
-          {/* Animated background */}
-          <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-black">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(120,119,198,0.05),transparent_50%)]"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(255,107,107,0.05),transparent_50%)]"></div>
-          </div>
+    <BlockchainProvider>
+      <TransactionProvider>
+        <Router>
+          <div className="min-h-screen bg-black text-white overflow-x-hidden">
+            {/* Animated background */}
+            <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-black">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(120,119,198,0.05),transparent_50%)]"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(255,107,107,0.05),transparent_50%)]"></div>
+            </div>
 
-          <div className="relative z-10">
-            <Navbar />
-        
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/demo" element={<Demo />} />
-              <Route path="/tech-proof" element={<TechProof />} />
-            </Routes>
-            <TroubleshootingGuide />
+            <div className="relative z-10">
+              <Navbar />
+          
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/demo" element={<Demo />} />
+                <Route path="/tech-proof" element={<TechProof />} />
+              </Routes>
+              <TroubleshootingGuide />
+            </div>
           </div>
-        </div>
-      </Router>
-    </TransactionProvider>
+        </Router>
+      </TransactionProvider>
+    </BlockchainProvider>
   )
 }
 

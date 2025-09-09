@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useBlockchain } from '../hooks/useBlockchain'
+import { useBlockchain } from '../context/BlockchainContext'
 import logo from '../assets/logo.png'
 
 function Navbar() {
@@ -20,6 +20,14 @@ function Navbar() {
       await connectWallet()
     } catch (e) {
       // swallow; error already surfaced in hook state
+    }
+  }
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnectWallet()
+    } catch (e) {
+      console.error('Error disconnecting wallet:', e)
     }
   }
 
@@ -120,7 +128,7 @@ function Navbar() {
 
             {/* Connect/Disconnect Button */}
             <button
-              onClick={isConnected ? disconnectWallet : handleConnect}
+              onClick={isConnected ? handleDisconnect : handleConnect}
               disabled={isLoading}
               className={`relative px-6 py-2 rounded-lg font-medium transition-all text-white group min-w-[140px] ${
                 isLoading
