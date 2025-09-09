@@ -1,2 +1,6 @@
 # Netlify SPA routing fallback
+# API routes should not be redirected
+/api/*  /api/:splat  200
+
+# All other routes should serve the SPA
 /*    /index.html   200

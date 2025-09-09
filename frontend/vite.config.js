@@ -15,9 +15,14 @@ export default defineConfig({
       // Ensure assets are properly handled
       external: [],
     },
+    // Use esbuild for minification instead of terser
+    minify: 'esbuild',
+    sourcemap: false,
   },
   preview: {
     // Enable SPA routing for preview mode
     historyApiFallback: true,
   },
+  // Ensure base URL is correct for deployment
+  base: './',
 })

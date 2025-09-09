@@ -10,7 +10,7 @@ export const checkBlockchainStatus = async () => {
 
   try {
     // Try to connect to BlockDAG Testnet
-    const provider = new ethers.providers.JsonRpcProvider('https://rpc.primordial.bdagscan.com')
+    const provider = new ethers.JsonRpcProvider('https://rpc.primordial.bdagscan.com')
     
     // Check if blockchain is running
     const network = await provider.getNetwork()

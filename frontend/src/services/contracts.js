@@ -105,7 +105,7 @@ export const formatAddress = (address) => {
 
 export const formatEther = (value) => {
   try {
-    return ethers.utils.formatEther(value)
+    return ethers.formatEther(value)
   } catch (error) {
     return '0'
   }
@@ -113,9 +113,9 @@ export const formatEther = (value) => {
 
 export const parseEther = (value) => {
   try {
-    return ethers.utils.parseEther(value.toString())
+    return ethers.parseEther(value.toString())
   } catch (error) {
-    return ethers.BigNumber.from(0)
+    return BigInt(0)
   }
 }
 

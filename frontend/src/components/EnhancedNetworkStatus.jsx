@@ -115,7 +115,7 @@ const EnhancedNetworkStatus = () => {
       // Fetch gas price
       const feeData = await provider.getFeeData()
       if (feeData.gasPrice) {
-        const gasPriceGwei = parseFloat(ethers.utils.formatUnits(feeData.gasPrice, 'gwei'))
+        const gasPriceGwei = parseFloat(ethers.formatUnits(feeData.gasPrice, 'gwei'))
         setGasPrice(gasPriceGwei.toFixed(2))
       }
 
